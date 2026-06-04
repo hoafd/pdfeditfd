@@ -46,12 +46,12 @@ class BackgroundRenderer:
         # Thread-safe cache: (page_num, zoom) -> PIL.Image
         self._cache = {}
         self._cache_lock = threading.Lock()
-        self._cache_max_size = 50  # Max cached page images
-
+        
         # Thumbnail cache
         self._thumb_cache = {}
         self._thumb_lock = threading.Lock()
-        self._thumb_max_size = 200
+        
+        self._cache_max_size, self._thumb_max_size = self._detect_cache_sizes()
 
         # Pending futures: (page_num, zoom) -> Future
         self._pending = {}
@@ -64,6 +64,20 @@ class BackgroundRenderer:
             f"BackgroundRenderer: {max_workers} workers "
             f"(CPU cores: {os.cpu_count()})"
         )
+
+    @staticmethod
+    def _detect_cache_sizes():
+        """Auto-detect optimal cache sizes based on available RAM."""
+        try:
+            import psutil
+            mem_gb = psutil.virtual_memory().available / (1024 ** 3)
+            # Base cache size: 50 pages and 200 thumbnails per GB of available RAM
+            # Max 500 pages (approx 1GB-2GB RAM) and 2000 thumbnails
+            page_cache = min(500, max(50, int(mem_gb * 50)))
+            thumb_cache = min(2000, max(200, int(mem_gb * 200)))
+            return page_cache, thumb_cache
+        except ImportError:
+            return 50, 200
 
     @staticmethod
     def _detect_optimal_workers():
