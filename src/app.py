@@ -322,6 +322,11 @@ class PDFEditorApp:
                               command=self.delete_current_page, accelerator="Del")
         edit_menu.add_command(label=t("edit_extract_page"),
                               command=self.extract_current_page)
+        edit_menu.add_separator()
+        edit_menu.add_command(label=t("edit_insert_blank_before"),
+                              command=self.insert_blank_page_before)
+        edit_menu.add_command(label=t("edit_insert_blank_after"),
+                              command=self.insert_blank_page_after)
         menubar.add_cascade(label=t("menu_edit"), menu=edit_menu)
 
         # Tools menu
@@ -2664,6 +2669,36 @@ class PDFEditorApp:
             self._update_status("Image added")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to add image:\n{e}")
+
+    def insert_blank_page_before(self):
+        """Insert a blank page before the current page."""
+        self._insert_blank_page(after=False)
+
+    def insert_blank_page_after(self):
+        """Insert a blank page after the current page."""
+        self._insert_blank_page(after=True)
+
+    def _insert_blank_page(self, after=True):
+        if not self.doc:
+            messagebox.showwarning("Warning", "No document is open.")
+            return
+
+        current = self.viewer.current_page
+        page = self.doc[current]
+
+        self._save_undo_state("Insert blank page")
+
+        insert_idx = current + 1 if after else current
+        # Create a new page with the same dimensions as the current one
+        self.doc.new_page(pno=insert_idx, width=page.rect.width, height=page.rect.height)
+
+        self.viewer.clear_cache()
+        if after:
+            self.viewer.go_to_page(current + 1)
+        self._update_display()
+        self._update_thumbnails()
+        action_text = "sau" if after else "trước"
+        self._update_status(f"Đã chèn trang trống vào {action_text} trang {current + 1}.")
 
     def add_watermark_dialog(self):
         """Add watermark to the document."""

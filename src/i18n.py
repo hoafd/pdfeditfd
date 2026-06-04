@@ -39,6 +39,8 @@ TRANSLATIONS = {
         "edit_rot_180": "🔄 Rotate 180°",
         "edit_del_page": "🗑️ Delete Current Page",
         "edit_extract_page": "📋 Extract Current Page",
+        "edit_insert_blank_before": "📄 Insert Blank Page Before",
+        "edit_insert_blank_after": "📄 Insert Blank Page After",
 
         "tools_split_y": "✂️ Smart Split (Y Coordinate)",
         "tools_split_text": "🔍 Smart Split (After Text - OCR)",
@@ -135,6 +137,8 @@ TRANSLATIONS = {
         "edit_rot_180": "🔄 Xoay 180°",
         "edit_del_page": "🗑️ Xóa trang",
         "edit_extract_page": "📋 Trích xuất trang",
+        "edit_insert_blank_before": "📄 Chèn trang trống vào trước",
+        "edit_insert_blank_after": "📄 Chèn trang trống vào sau",
 
         "tools_split_y": "✂️ Cắt ngang trang (Theo tọa độ Y)",
         "tools_split_text": "🔍 Cắt ngang trang (Sau đoạn chữ OCR)",
