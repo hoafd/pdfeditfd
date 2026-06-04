@@ -1408,6 +1408,15 @@ class PDFEditorApp:
                         tags=(f"page_{p}", "continuous_page_bg")
                     )
                     
+                    self.canvas.create_text(
+                        l['x_start'], l['y_start'] - 18,
+                        text=f"Trang {p + 1}",
+                        font=("Segoe UI", 11, "bold"),
+                        fill=COLORS["text_secondary"],
+                        anchor="nw",
+                        tags=(f"page_{p}", "continuous_page_label")
+                    )
+                    
                     self.canvas.create_image(
                         l['x_start'], l['y_start'],
                         image=photo, anchor="nw",
