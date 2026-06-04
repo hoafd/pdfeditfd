@@ -39,7 +39,8 @@ pyinstaller ^
     --onedir ^
     --windowed ^
     --name "PDFEditorPro" ^
-    --icon "NONE" ^
+    --icon "assets\icon.ico" ^
+    --add-data "assets;assets" ^
     --add-data "tools\Tesseract-OCR;tools\Tesseract-OCR" ^
     --add-data "tools\poppler;tools\poppler" ^
     --hidden-import "PIL" ^

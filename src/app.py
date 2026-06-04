@@ -139,12 +139,28 @@ class PageTab:
         self.frame.destroy()
 
 
+def resource_path(relative_path):
+    """Get absolute path to resource, works for dev and for PyInstaller"""
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
 class PDFEditorApp:
     """Main PDF Editor Application with CustomTkinter GUI."""
 
     def __init__(self, root):
         self.root = root
-        self.root.title("⚡ PDF Editor Pro — Offline Edition")
+        self.root.title("✨ PDF Editor Pro - Offline Edition")
+        
+        # Set app icon
+        icon_path = resource_path(os.path.join("assets", "icon.ico"))
+        if os.path.exists(icon_path):
+            try:
+                self.root.iconbitmap(icon_path)
+            except Exception as e:
+                logger.warning(f"Could not load icon: {e}")
         self.root.geometry("1400x850")
         self.root.minsize(1000, 600)
 
