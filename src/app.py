@@ -832,7 +832,7 @@ class PDFEditorApp:
         # Progress bar (hidden by default)
         self._progress_var = tk.DoubleVar(value=0)
         self._progress_bar = ttk.Progressbar(
-            inner, variable=self._progress_var,
+            self.status_inner, variable=self._progress_var,
             maximum=100, length=120, mode='determinate'
         )
         # Don't pack yet — shown only during background ops
