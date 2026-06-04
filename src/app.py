@@ -34,6 +34,7 @@ from src.utils import (
     logger, format_file_size, generate_output_filename,
     get_output_dir, get_temp_dir
 )
+from src.i18n import t, set_language, get_language
 
 
 # ─── Color Palette ──────────────────────────────────────────────────────────
@@ -251,9 +252,9 @@ class PDFEditorApp:
                             bg=COLORS["bg_card"],
                             fg=COLORS["text_primary"],
                             activebackground=COLORS["accent"])
-        file_menu.add_command(label="📂 Open PDF...",
+        file_menu.add_command(label=t("file_open"),
                               command=self.open_file, accelerator="Ctrl+O")
-        file_menu.add_command(label="💾 Save As...",
+        file_menu.add_command(label=t("file_save"),
                               command=self.save_file, accelerator="Ctrl+S")
         file_menu.add_separator()
         # Recent files submenu
@@ -261,91 +262,91 @@ class PDFEditorApp:
                                    bg=COLORS["bg_card"],
                                    fg=COLORS["text_primary"],
                                    activebackground=COLORS["accent"])
-        file_menu.add_cascade(label="📋 Recent Files", menu=self.recent_menu)
+        file_menu.add_cascade(label=t("file_recent"), menu=self.recent_menu)
         self._update_recent_menu()
         file_menu.add_separator()
-        file_menu.add_command(label="📄 Merge PDFs...",
+        file_menu.add_command(label=t("file_merge"),
                               command=self.merge_pdfs)
-        file_menu.add_command(label="📑 Split by Pages...",
+        file_menu.add_command(label=t("file_split_pages"),
                               command=self.split_by_pages_dialog)
-        file_menu.add_command(label="📦 Compress PDF",
+        file_menu.add_command(label=t("file_compress"),
                               command=self.compress_pdf)
         file_menu.add_separator()
-        file_menu.add_command(label="🖼️ Export Page as Image...",
+        file_menu.add_command(label=t("file_export_img"),
                               command=self.export_page_as_image)
-        file_menu.add_command(label="🖨️ Print...",
+        file_menu.add_command(label=t("file_print"),
                               command=self.print_pdf, accelerator="Ctrl+P")
         file_menu.add_separator()
-        file_menu.add_command(label="🔒 Encrypt PDF...",
+        file_menu.add_command(label=t("file_encrypt"),
                               command=self.encrypt_pdf_dialog)
-        file_menu.add_command(label="🔓 Decrypt PDF...",
+        file_menu.add_command(label=t("file_decrypt"),
                               command=self.decrypt_pdf_dialog)
         file_menu.add_separator()
-        file_menu.add_command(label="ℹ️ PDF Properties / Metadata...",
+        file_menu.add_command(label=t("file_props"),
                               command=self.show_metadata_dialog)
         file_menu.add_separator()
-        file_menu.add_command(label="❌ Exit",
+        file_menu.add_command(label=t("file_exit"),
                               command=self.root.quit)
-        menubar.add_cascade(label="  File  ", menu=file_menu)
+        menubar.add_cascade(label=t("menu_file"), menu=file_menu)
 
         # Edit menu
         edit_menu = tk.Menu(menubar, tearoff=0,
                             bg=COLORS["bg_card"],
                             fg=COLORS["text_primary"],
                             activebackground=COLORS["accent"])
-        edit_menu.add_command(label="↩️ Undo",
+        edit_menu.add_command(label=t("edit_undo"),
                               command=self.undo, accelerator="Ctrl+Z")
-        edit_menu.add_command(label="↪️ Redo",
+        edit_menu.add_command(label=t("edit_redo"),
                               command=self.redo, accelerator="Ctrl+Y")
         edit_menu.add_separator()
-        edit_menu.add_command(label="🔍 Find Text...",
+        edit_menu.add_command(label=t("edit_find"),
                               command=self.find_text_dialog, accelerator="Ctrl+F")
-        edit_menu.add_command(label="📋 Copy Page Text",
+        edit_menu.add_command(label=t("edit_copy"),
                               command=self.copy_page_text, accelerator="Ctrl+C")
-        edit_menu.add_command(label="🔢 Go to Page...",
+        edit_menu.add_command(label=t("edit_goto"),
                               command=self.goto_page_dialog, accelerator="Ctrl+G")
         edit_menu.add_separator()
-        edit_menu.add_command(label="🔄 Rotate 90° CW",
+        edit_menu.add_command(label=t("edit_rot_cw"),
                               command=lambda: self.rotate_current(90), accelerator="R")
-        edit_menu.add_command(label="🔄 Rotate 90° CCW",
+        edit_menu.add_command(label=t("edit_rot_ccw"),
                               command=lambda: self.rotate_current(-90))
-        edit_menu.add_command(label="🔄 Rotate 180°",
+        edit_menu.add_command(label=t("edit_rot_180"),
                               command=lambda: self.rotate_current(180))
         edit_menu.add_separator()
-        edit_menu.add_command(label="🗑️ Delete Current Page",
+        edit_menu.add_command(label=t("edit_del_page"),
                               command=self.delete_current_page, accelerator="Del")
-        edit_menu.add_command(label="📋 Extract Current Page",
+        edit_menu.add_command(label=t("edit_extract_page"),
                               command=self.extract_current_page)
-        menubar.add_cascade(label="  Edit  ", menu=edit_menu)
+        menubar.add_cascade(label=t("menu_edit"), menu=edit_menu)
 
         # Tools menu
         tools_menu = tk.Menu(menubar, tearoff=0,
                              bg=COLORS["bg_card"],
                              fg=COLORS["text_primary"],
                              activebackground=COLORS["accent"])
-        tools_menu.add_command(label="✂️ Smart Split (Y Coordinate)",
+        tools_menu.add_command(label=t("tools_split_y"),
                                command=self.smart_split_y_dialog)
-        tools_menu.add_command(label="🔍 Smart Split (After Text - OCR)",
+        tools_menu.add_command(label=t("tools_split_text"),
                                command=self.smart_split_text_dialog)
-        tools_menu.add_command(label="🤖 Smart Split (Auto-Detect)",
+        tools_menu.add_command(label=t("tools_split_auto"),
                                command=self.smart_split_auto)
         tools_menu.add_separator()
-        tools_menu.add_command(label="📝 Add Text...",
+        tools_menu.add_command(label=t("tools_add_text"),
                                command=self.add_text_dialog)
-        tools_menu.add_command(label="🖼️ Add Image...",
+        tools_menu.add_command(label=t("tools_add_img"),
                                command=self.add_image_dialog)
-        tools_menu.add_command(label="💧 Add Watermark...",
+        tools_menu.add_command(label=t("tools_add_wm"),
                                command=self.add_watermark_dialog)
-        tools_menu.add_command(label="🔢 Add Page Numbers",
+        tools_menu.add_command(label=t("tools_add_page_num"),
                                command=self.add_page_numbers_dialog)
         tools_menu.add_separator()
-        tools_menu.add_command(label="📄 Extract All Text",
+        tools_menu.add_command(label=t("tools_extract_text"),
                                command=self.extract_text_dialog)
-        tools_menu.add_command(label="🖼️ Extract All Images",
+        tools_menu.add_command(label=t("tools_extract_img"),
                                command=self.extract_images)
-        tools_menu.add_command(label="🔍 OCR Text (Tesseract)",
+        tools_menu.add_command(label=t("tools_ocr"),
                                command=self.ocr_text_dialog)
-        menubar.add_cascade(label="  Tools  ", menu=tools_menu)
+        menubar.add_cascade(label=t("menu_tools"), menu=tools_menu)
 
         # Interactive Split menu
         split_menu = tk.Menu(menubar, tearoff=0,
@@ -353,18 +354,18 @@ class PDFEditorApp:
                              fg=COLORS["text_primary"],
                              activebackground=COLORS["accent"])
         split_menu.add_command(
-            label="🖱️ Click to Split (Interactive)",
+            label=t("split_interactive"),
             command=self.enable_split_mode
         )
         split_menu.add_command(
-            label="📏 Split by Percentage...",
+            label=t("split_pct"),
             command=self.smart_split_percentage_dialog
         )
         split_menu.add_command(
-            label="✂️ Split ALL Pages at Same Y...",
+            label=t("split_all_y"),
             command=self.split_all_pages_dialog
         )
-        menubar.add_cascade(label="  ✂ Split  ", menu=split_menu)
+        menubar.add_cascade(label=t("menu_split"), menu=split_menu)
 
         # Batch Operations menu
         batch_menu = tk.Menu(menubar, tearoff=0,
@@ -372,62 +373,76 @@ class PDFEditorApp:
                              fg=COLORS["text_primary"],
                              activebackground=COLORS["accent"])
         batch_menu.add_command(
-            label="🔄 Rotate Pages...",
+            label=t("batch_rot"),
             command=self.batch_rotate_dialog
         )
         batch_menu.add_command(
-            label="🗑️ Delete Pages...",
+            label=t("batch_del"),
             command=self.batch_delete_dialog
         )
         batch_menu.add_command(
-            label="📋 Extract Pages to New PDF...",
+            label=t("batch_extract"),
             command=self.batch_extract_dialog
         )
         batch_menu.add_separator()
         batch_menu.add_command(
-            label="✂️ Split ALL Pages at Same Y...",
+            label=t("batch_split_y"),
             command=self.split_all_pages_dialog
         )
         batch_menu.add_command(
-            label="✂️ Split ALL Pages at Same %...",
+            label=t("batch_split_pct"),
             command=self.batch_split_percentage_dialog
         )
         batch_menu.add_command(
-            label="🔍 Split Pages by OCR Text...",
+            label=t("batch_split_ocr"),
             command=self.batch_split_ocr_dialog
         )
         batch_menu.add_command(
-            label="✂️ Crop Between Texts (OCR)...",
+            label=t("batch_crop_ocr"),
             command=self.batch_crop_between_texts_dialog
         )
         batch_menu.add_separator()
         batch_menu.add_command(
-            label="💧 Watermark ALL Pages...",
+            label=t("batch_wm"),
             command=self.add_watermark_dialog
         )
         batch_menu.add_command(
-            label="🔢 Add Page Numbers to ALL...",
+            label=t("batch_page_num"),
             command=self.add_page_numbers_dialog
         )
         batch_menu.add_separator()
         batch_menu.add_command(
-            label="🖼️ Export ALL Pages as Images...",
+            label=t("batch_export_img"),
             command=self.batch_export_images_dialog
         )
-        menubar.add_cascade(label="  📦 Batch  ", menu=batch_menu)
+        menubar.add_cascade(label=t("menu_batch"), menu=batch_menu)
 
         # Help
         help_menu = tk.Menu(menubar, tearoff=0,
                             bg=COLORS["bg_card"],
                             fg=COLORS["text_primary"],
                             activebackground=COLORS["accent"])
-        help_menu.add_command(label="ℹ️ About",
+        help_menu.add_command(label=t("help_about"),
                               command=self.show_about)
-        help_menu.add_command(label="⌨️ Keyboard Shortcuts",
+        help_menu.add_command(label=t("help_shortcuts"),
                               command=self.show_shortcuts)
-        menubar.add_cascade(label="  Help  ", menu=help_menu)
+        menubar.add_cascade(label=t("menu_help"), menu=help_menu)
+
+        # Language menu
+        lang_menu = tk.Menu(menubar, tearoff=0,
+                            bg=COLORS["bg_card"],
+                            fg=COLORS["text_primary"],
+                            activebackground=COLORS["accent"])
+        lang_menu.add_command(label="English", command=lambda: self.change_language("en"))
+        lang_menu.add_command(label="Tiếng Việt", command=lambda: self.change_language("vi"))
+        menubar.add_cascade(label=t("menu_language"), menu=lang_menu)
 
         self.root.config(menu=menubar)
+
+    def change_language(self, lang):
+        if lang != get_language():
+            set_language(lang)
+            messagebox.showinfo("Restart Required", "Language changed. Please restart the application to apply changes.\nNgôn ngữ đã được thay đổi. Vui lòng khởi động lại ứng dụng.")
 
     def _build_toolbar(self):
         """Build the top toolbar with quick-access buttons."""
@@ -550,7 +565,7 @@ class PDFEditorApp:
         header_frame = tk.Frame(self.sidebar, bg=COLORS["bg_panel"])
         header_frame.pack(fill=tk.X, pady=(8, 0))
         
-        header = tk.Label(header_frame, text="📄 Pages",
+        header = tk.Label(header_frame, text="📄 " + t("sb_thumbnails"),
                           bg=COLORS["bg_panel"],
                           fg=COLORS["accent_light"],
                           font=("Segoe UI", 11, "bold"),
@@ -562,16 +577,16 @@ class PDFEditorApp:
         sel_toolbar.pack(fill=tk.X, padx=8, pady=(4, 8))
         
         btn_font = ("Segoe UI", 8)
-        tk.Button(sel_toolbar, text="All", command=self._select_all,
+        tk.Button(sel_toolbar, text=t("sb_all"), command=self._select_all,
                   bg=COLORS["bg_card"], fg=COLORS["text_primary"],
                   relief=tk.FLAT, font=btn_font).pack(side=tk.LEFT, padx=1)
-        tk.Button(sel_toolbar, text="Odd", command=self._select_odd,
+        tk.Button(sel_toolbar, text=t("sb_odd"), command=self._select_odd,
                   bg=COLORS["bg_card"], fg=COLORS["text_primary"],
                   relief=tk.FLAT, font=btn_font).pack(side=tk.LEFT, padx=1)
-        tk.Button(sel_toolbar, text="Even", command=self._select_even,
+        tk.Button(sel_toolbar, text=t("sb_even"), command=self._select_even,
                   bg=COLORS["bg_card"], fg=COLORS["text_primary"],
                   relief=tk.FLAT, font=btn_font).pack(side=tk.LEFT, padx=1)
-        tk.Button(sel_toolbar, text="Clear", command=self._clear_selection,
+        tk.Button(sel_toolbar, text=t("sb_clear"), command=self._clear_selection,
                   bg=COLORS["bg_card"], fg=COLORS["text_secondary"],
                   relief=tk.FLAT, font=btn_font).pack(side=tk.RIGHT, padx=1)
 
@@ -3316,6 +3331,8 @@ class PDFEditorApp:
             self._update_status(msg)
             self.root.update()
 
+        template_page_num = self.viewer.current_page if dialog.result.get("use_template") else None
+
         try:
             output_path, total_crops, skipped = \
                 self.splitter.crop_between_texts(
@@ -3326,7 +3343,8 @@ class PDFEditorApp:
                     margin_above=margin_above,
                     margin_below=margin_below,
                     keep_unmatched=keep_unmatched,
-                    progress_callback=progress_cb
+                    progress_callback=progress_cb,
+                    template_page_num=template_page_num
                 )
 
             msg_lines = [
@@ -3899,6 +3917,18 @@ class _BatchCropBetweenTextsDialog(tk.Toplevel):
         self.margin_below_entry.pack(side=tk.LEFT, padx=4, ipady=2)
         self.margin_below_entry.insert(0, "5")
 
+        # ─── Use template checkbox ───
+        self.template_var = tk.BooleanVar(value=True)
+        tk.Checkbutton(
+            fields,
+            text="Use current page as template (Fast! OCR runs once)",
+            variable=self.template_var,
+            bg=COLORS["bg_card"], fg=COLORS["text_primary"],
+            selectcolor=COLORS["bg_dark"],
+            activebackground=COLORS["bg_card"],
+            font=("Segoe UI", 9, "bold")
+        ).pack(anchor="w", pady=(10, 0))
+
         # ─── Keep unmatched checkbox ───
         self.keep_var = tk.BooleanVar(value=False)
         tk.Checkbutton(
@@ -3909,7 +3939,7 @@ class _BatchCropBetweenTextsDialog(tk.Toplevel):
             selectcolor=COLORS["bg_dark"],
             activebackground=COLORS["bg_card"],
             font=("Segoe UI", 9)
-        ).pack(anchor="w", pady=(10, 0))
+        ).pack(anchor="w", pady=(5, 0))
 
         # ─── Info ───
         tk.Label(
@@ -3979,6 +4009,7 @@ class _BatchCropBetweenTextsDialog(tk.Toplevel):
             "margin_above": margin_above,
             "margin_below": margin_below,
             "keep_unmatched": self.keep_var.get(),
+            "use_template": self.template_var.get(),
         }
         self.destroy()
 

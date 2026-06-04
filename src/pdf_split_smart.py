@@ -744,7 +744,7 @@ class SmartPageSplitter:
     def crop_between_texts(self, pdf_path, page_numbers, start_text, end_text,
                             output_path=None, margin_above=5, margin_below=5,
                             lang=None, keep_unmatched=False,
-                            progress_callback=None):
+                            progress_callback=None, template_page_num=None):
         """
         Crop pages to only keep content between start_text and end_text.
         Runs OCR concurrently using BatchProcessor.
@@ -824,13 +824,23 @@ class SmartPageSplitter:
                 logger.warning(f"OCR failed on page {page_num + 1}: {e}")
                 return page_num, None
 
-        # 2. Run OCR concurrently
-        results = processor.parallel_map(tasks, _ocr_worker, progress_callback)
-        if processor.is_cancelled:
-            return None, 0, []
-            
-        # Convert results list back to dict: page_num -> pairs
-        page_results = {res[0]: res[1] for idx, res in results if res is not None}
+        # 2. Run OCR
+        page_results = {}
+        if template_page_num is not None:
+            if progress_callback:
+                progress_callback(1, 1, f"Scanning template page {template_page_num + 1}...")
+            _, pairs = _ocr_worker(template_page_num, 0, 1)
+            if pairs:
+                for p in page_numbers_set:
+                    page_results[p] = pairs
+        else:
+            results = processor.parallel_map(tasks, _ocr_worker, progress_callback)
+            if processor.is_cancelled:
+                return None, 0, []
+                
+            for p_num, pairs in results:
+                if pairs:
+                    page_results[p_num] = pairs
         
         # 3. Build Output PDF
         doc = fitz.open(str(pdf_path))
