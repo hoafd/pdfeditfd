@@ -589,22 +589,25 @@ class PDFEditorApp:
         row2.pack(fill=tk.X)
         
         btn_font = ("Segoe UI", 8)
+        
+        # Row 1: All, Odd, Even
         tk.Button(row1, text=t("sb_all"), command=self._select_all,
                   bg=COLORS["bg_card"], fg=COLORS["text_primary"],
-                  relief=tk.FLAT, font=btn_font, width=5).pack(side=tk.LEFT, padx=1)
+                  relief=tk.FLAT, font=btn_font).pack(side=tk.LEFT, expand=True, fill=tk.X, padx=1)
         tk.Button(row1, text=t("sb_odd"), command=self._select_odd,
                   bg=COLORS["bg_card"], fg=COLORS["text_primary"],
-                  relief=tk.FLAT, font=btn_font, width=5).pack(side=tk.LEFT, padx=1)
+                  relief=tk.FLAT, font=btn_font).pack(side=tk.LEFT, expand=True, fill=tk.X, padx=1)
         tk.Button(row1, text=t("sb_even"), command=self._select_even,
                   bg=COLORS["bg_card"], fg=COLORS["text_primary"],
-                  relief=tk.FLAT, font=btn_font, width=5).pack(side=tk.LEFT, padx=1)
+                  relief=tk.FLAT, font=btn_font).pack(side=tk.LEFT, expand=True, fill=tk.X, padx=1)
                   
+        # Row 2: Custom, Clear
         tk.Button(row2, text=t("sb_custom"), command=self._select_custom_dialog,
                   bg=COLORS["bg_card"], fg=COLORS["text_primary"],
-                  relief=tk.FLAT, font=btn_font).pack(side=tk.LEFT, padx=1)
+                  relief=tk.FLAT, font=btn_font).pack(side=tk.LEFT, expand=True, fill=tk.X, padx=1)
         tk.Button(row2, text=t("sb_clear"), command=self._clear_selection,
                   bg=COLORS["bg_card"], fg=COLORS["text_secondary"],
-                  relief=tk.FLAT, font=btn_font).pack(side=tk.RIGHT, padx=1)
+                  relief=tk.FLAT, font=btn_font).pack(side=tk.LEFT, expand=True, fill=tk.X, padx=1)
 
         # Scrollable thumbnail list
         thumb_container = tk.Frame(self.sidebar, bg=COLORS["bg_panel"])
@@ -1686,19 +1689,8 @@ class PDFEditorApp:
             self.root.wait_window(dialog)
 
             if dialog.result is not None:
-                output = self.splitter.split_by_y_coordinate(
-                    str(self.file_path),
-                    self.viewer.current_page,
-                    split_points[dialog.result]["pdf_y"]
-                )
-                self._update_status("Auto-split completed")
-                messagebox.showinfo(
-                    "Success",
-                    f"Page split successfully!\nSaved to: {output}"
-                )
-                if messagebox.askyesno("Open Result",
-                                        "Open the split PDF?"):
-                    self.open_file(str(output))
+                pdf_y = split_points[dialog.result]["pdf_y"]
+                self._split_page_in_memory(self.viewer.current_page, pdf_y)
 
         except Exception as e:
             messagebox.showerror("Error", f"Auto-split failed:\n{e}")
@@ -1718,18 +1710,9 @@ class PDFEditorApp:
 
         if result is not None:
             try:
-                output = self.splitter.split_by_y_percentage(
-                    str(self.file_path),
-                    self.viewer.current_page,
-                    result
-                )
-                messagebox.showinfo(
-                    "Success",
-                    f"Page split at {result}%!\nSaved to: {output}"
-                )
-                if messagebox.askyesno("Open Result",
-                                        "Open the split PDF?"):
-                    self.open_file(str(output))
+                page_height = self.doc[self.viewer.current_page].rect.height
+                pdf_y = page_height * result / 100.0
+                self._split_page_in_memory(self.viewer.current_page, pdf_y)
             except Exception as e:
                 messagebox.showerror("Error", f"Split failed:\n{e}")
 
@@ -1750,18 +1733,38 @@ class PDFEditorApp:
 
         if result is not None:
             try:
-                output = self.splitter.split_all_pages_by_y(
-                    str(self.file_path), result
-                )
-                messagebox.showinfo(
-                    "Success",
-                    f"All pages split at Y={result:.0f}pt!\n"
-                    f"New document has {self.doc.page_count * 2} pages.\n"
-                    f"Saved to: {output}"
-                )
-                if messagebox.askyesno("Open Result",
-                                        "Open the split PDF?"):
-                    self.open_file(str(output))
+                self._save_undo_state(f"Split all pages at Y={result:.0f}")
+                
+                initial_count = self.doc.page_count
+                # Iterate backwards so we don't mess up indices
+                for page_num in range(self.doc.page_count - 1, -1, -1):
+                    page = self.doc[page_num]
+                    page_rect = page.rect
+                    
+                    # Ensure Y is within page height
+                    if result >= page_rect.height or result <= 0:
+                        continue
+                    
+                    temp_doc = fitz.open()
+                    temp_doc.insert_pdf(self.doc, from_page=page_num, to_page=page_num)
+                    
+                    self.doc.delete_page(page_num)
+                    
+                    self.doc.insert_pdf(temp_doc, from_page=0, to_page=0, start_at=page_num)
+                    self.doc[page_num].set_cropbox(fitz.Rect(page_rect.x0, page_rect.y0, page_rect.x1, page_rect.y0 + result))
+                    
+                    self.doc.insert_pdf(temp_doc, from_page=0, to_page=0, start_at=page_num + 1)
+                    self.doc[page_num + 1].set_cropbox(fitz.Rect(page_rect.x0, page_rect.y0 + result, page_rect.x1, page_rect.y1))
+                    
+                    temp_doc.close()
+                    
+                self.viewer.clear_cache()
+                self._update_display()
+                self._update_thumbnails()
+                
+                msg = f"Đã chia toàn bộ tài liệu từ {initial_count} trang thành {self.doc.page_count} trang!"
+                self._update_status(msg)
+                messagebox.showinfo("Success", msg)
             except Exception as e:
                 messagebox.showerror("Error", f"Split failed:\n{e}")
 
@@ -1839,28 +1842,83 @@ class PDFEditorApp:
             
         try:
             pages_to_crop = sorted(list(self.selected_pages)) if self.selected_pages else [self.viewer.current_page]
+            self._save_undo_state(f"Crop {len(pages_to_crop)} pages into {len(regions)} regions")
             
-            if len(pages_to_crop) > 1:
-                output = self.splitter.batch_crop_multiple_y_regions(
-                    str(self.file_path),
-                    pages_to_crop,
-                    regions
-                )
-                msg = f"{len(pages_to_crop)} pages cropped into {len(regions)} regions each!\nSaved to: {output}"
-            else:
-                output = self.splitter.crop_multiple_y_regions(
-                    str(self.file_path),
-                    pages_to_crop[0],
-                    regions
-                )
-                msg = f"Page cropped into {len(regions)} regions!\nSaved to: {output}"
+            # Process from last to first to avoid index shifting
+            for page_num in sorted(pages_to_crop, reverse=True):
+                page = self.doc[page_num]
+                page_rect = page.rect
+                
+                valid_regions = []
+                for y1, y2 in regions:
+                    y1 = max(0, min(y1, page_rect.height))
+                    y2 = max(0, min(y2, page_rect.height))
+                    if y1 < y2:
+                        valid_regions.append((y1, y2))
+                        
+                if not valid_regions:
+                    continue
+                    
+                # Create a temporary doc with just this page to duplicate from
+                temp_doc = fitz.open()
+                temp_doc.insert_pdf(self.doc, from_page=page_num, to_page=page_num)
+                
+                # Delete the original page
+                self.doc.delete_page(page_num)
+                
+                # Insert the copies back into the document
+                for i, (y1, y2) in enumerate(valid_regions):
+                    self.doc.insert_pdf(temp_doc, from_page=0, to_page=0, start_at=page_num + i)
+                    new_page = self.doc[page_num + i]
+                    
+                    # Set the cropbox to show only the selected region
+                    crop_rect = fitz.Rect(page_rect.x0, page_rect.y0 + y1, page_rect.x1, page_rect.y0 + y2)
+                    new_page.set_cropbox(crop_rect)
+                    
+                temp_doc.close()
                 
             self.disable_multi_split_mode()
+            self.selected_pages.clear()
+            self.viewer.clear_cache()
+            self._update_display()
+            self._update_thumbnails()
+            
+            msg = f"Đã áp dụng cắt {len(pages_to_crop)} trang (thành {len(valid_regions)} phần) trực tiếp trên tài liệu!"
+            self._update_status(msg)
             messagebox.showinfo("Success", msg)
-            if messagebox.askyesno("Open Result", "Open the cropped PDF?"):
-                self.open_file(str(output))
+            
         except Exception as e:
             messagebox.showerror("Error", f"Crop failed:\n{e}")
+
+    def _split_page_in_memory(self, page_num, pdf_y):
+        """Helper to split a page into two at a specific Y coordinate in-memory."""
+        page = self.doc[page_num]
+        page_rect = page.rect
+        
+        self._save_undo_state(f"Split page {page_num + 1} at Y={pdf_y:.0f}")
+        
+        temp_doc = fitz.open()
+        temp_doc.insert_pdf(self.doc, from_page=page_num, to_page=page_num)
+        
+        self.doc.delete_page(page_num)
+        
+        self.doc.insert_pdf(temp_doc, from_page=0, to_page=0, start_at=page_num)
+        new_page_1 = self.doc[page_num]
+        new_page_1.set_cropbox(fitz.Rect(page_rect.x0, page_rect.y0, page_rect.x1, page_rect.y0 + pdf_y))
+        
+        self.doc.insert_pdf(temp_doc, from_page=0, to_page=0, start_at=page_num + 1)
+        new_page_2 = self.doc[page_num + 1]
+        new_page_2.set_cropbox(fitz.Rect(page_rect.x0, page_rect.y0 + pdf_y, page_rect.x1, page_rect.y1))
+        
+        temp_doc.close()
+        
+        self.viewer.clear_cache()
+        self._update_display()
+        self._update_thumbnails()
+        
+        msg = "Đã chia trang thành 2 phần trực tiếp trên tài liệu!"
+        self._update_status(msg)
+        messagebox.showinfo("Success", msg)
 
     def _on_canvas_click(self, event):
         """Handle canvas click."""
@@ -1906,19 +1964,8 @@ class PDFEditorApp:
             f"(Page height: {page.rect.height:.0f} points)"
         ):
             try:
-                output = self.splitter.split_by_y_coordinate(
-                    str(self.file_path),
-                    self.viewer.current_page,
-                    pdf_y
-                )
+                self._split_page_in_memory(self.viewer.current_page, pdf_y)
                 self.disable_split_mode()
-                messagebox.showinfo(
-                    "Success",
-                    f"Page split successfully!\nSaved to: {output}"
-                )
-                if messagebox.askyesno("Open Result",
-                                        "Open the split PDF?"):
-                    self.open_file(str(output))
             except Exception as e:
                 messagebox.showerror("Error", f"Split failed:\n{e}")
 
@@ -2099,8 +2146,17 @@ class PDFEditorApp:
             )
             return
 
+        out_path = filedialog.asksaveasfilename(
+            title="Save Merged PDF As",
+            defaultextension=".pdf",
+            filetypes=[("PDF files", "*.pdf")],
+            initialfile="merged_document.pdf"
+        )
+        if not out_path:
+            return
+
         try:
-            output = self.operations.merge_pdfs(list(files))
+            output = self.operations.merge_pdfs(list(files), output_path=out_path)
             messagebox.showinfo(
                 "Success",
                 f"Merged {len(files)} files!\nSaved to: {output}"
@@ -2155,13 +2211,18 @@ class PDFEditorApp:
                     p = int(part) - 1
                     ranges.append((p, p))
 
+            out_dir = filedialog.askdirectory(
+                title="Select Directory to Save Split PDFs"
+            )
+            if not out_dir:
+                return
+
             outputs = self.operations.split_by_pages(
-                str(self.file_path), ranges
+                str(self.file_path), ranges, output_dir=out_dir
             )
             messagebox.showinfo(
                 "Success",
-                f"Split into {len(outputs)} files:\n" +
-                "\n".join(str(p) for p in outputs)
+                f"Split into {len(outputs)} files in:\n{out_dir}\n"
             )
         except Exception as e:
             messagebox.showerror("Error", f"Split failed:\n{e}")
@@ -2192,13 +2253,18 @@ class PDFEditorApp:
                 ranges.append((start, end))
                 start += result
 
+            out_dir = filedialog.askdirectory(
+                title=t("select_dir", "Select Directory to Save Split PDFs")
+            )
+            if not out_dir:
+                return
+
             outputs = self.operations.split_by_pages(
-                str(self.file_path), ranges
+                str(self.file_path), ranges, output_dir=out_dir
             )
             messagebox.showinfo(
                 t("success", "Success"),
-                f"Split into {len(outputs)} files:\n" +
-                "\n".join(str(p) for p in outputs)
+                f"Split into {len(outputs)} files in:\n{out_dir}\n"
             )
         except Exception as e:
             messagebox.showerror(t("error", "Error"), f"Split failed:\n{e}")
@@ -2255,7 +2321,16 @@ class PDFEditorApp:
             return
         try:
             page_num = self.viewer.current_page
-            output = self.operations.extract_pages([page_num])
+            out_path = filedialog.asksaveasfilename(
+                title="Save Extracted Page As",
+                defaultextension=".pdf",
+                filetypes=[("PDF files", "*.pdf")],
+                initialfile=f"{self.file_path.stem}_page{page_num + 1}.pdf"
+            )
+            if not out_path:
+                return
+
+            output = self.operations.extract_pages([page_num], output_path=out_path)
             messagebox.showinfo(
                 "Success",
                 f"Page {page_num + 1} extracted to:\n{output}"
@@ -2270,8 +2345,17 @@ class PDFEditorApp:
             return
 
         try:
+            out_path = filedialog.asksaveasfilename(
+                title="Save Compressed PDF As",
+                defaultextension=".pdf",
+                filetypes=[("PDF files", "*.pdf")],
+                initialfile=f"{self.file_path.stem}_compressed.pdf"
+            )
+            if not out_path:
+                return
+
             output, orig_size, new_size = self.operations.compress_pdf(
-                str(self.file_path)
+                str(self.file_path), output_path=out_path
             )
             reduction = (1 - new_size / orig_size) * 100 if orig_size > 0 else 0
             messagebox.showinfo(
@@ -2296,12 +2380,22 @@ class PDFEditorApp:
         self.root.wait_window(dialog)
 
         if dialog.result:
+            out_path = filedialog.asksaveasfilename(
+                title="Save Encrypted PDF As",
+                defaultextension=".pdf",
+                filetypes=[("PDF files", "*.pdf")],
+                initialfile=f"{self.file_path.stem}_encrypted.pdf"
+            )
+            if not out_path:
+                return
+                
             try:
                 output = self.security.encrypt_pdf(
                     str(self.file_path),
                     dialog.result["user_password"],
                     dialog.result.get("owner_password"),
-                    permissions=dialog.result.get("permissions")
+                    permissions=dialog.result.get("permissions"),
+                    output_path=out_path
                 )
                 messagebox.showinfo(
                     "Success", f"PDF encrypted!\nSaved to: {output}"
@@ -2325,7 +2419,16 @@ class PDFEditorApp:
             return
 
         try:
-            output = self.security.decrypt_pdf(file_path, password)
+            out_path = filedialog.asksaveasfilename(
+                title="Save Decrypted PDF As",
+                defaultextension=".pdf",
+                filetypes=[("PDF files", "*.pdf")],
+                initialfile=f"{Path(file_path).stem}_decrypted.pdf"
+            )
+            if not out_path:
+                return
+
+            output = self.security.decrypt_pdf(file_path, password, output_path=out_path)
             messagebox.showinfo(
                 "Success", f"PDF decrypted!\nSaved to: {output}"
             )
@@ -3330,6 +3433,15 @@ class PDFEditorApp:
             messagebox.showerror("Error", "Please enter text to search for.")
             return
 
+        out_path = filedialog.asksaveasfilename(
+            title="Save Batch Split PDF As",
+            defaultextension=".pdf",
+            filetypes=[("PDF files", "*.pdf")],
+            initialfile=f"{self.file_path.stem}_batch_ocr_split.pdf"
+        )
+        if not out_path:
+            return
+
         self._update_status(
             f"Batch OCR Split: scanning {len(pages)} pages for '{search_text}'..."
         )
@@ -3345,6 +3457,7 @@ class PDFEditorApp:
                     str(self.file_path),
                     pages,
                     search_text,
+                    output_path=out_path,
                     margin_below=margin,
                     progress_callback=progress_cb
                 )
