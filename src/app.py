@@ -1765,11 +1765,21 @@ class PDFEditorApp:
         self.root.wait_window(dialog)
 
         if dialog.result is not None:
+            out_path = filedialog.asksaveasfilename(
+                title="Lưu file Cắt Y (Save As)",
+                defaultextension=".pdf",
+                filetypes=[("PDF files", "*.pdf")],
+                initialfile=f"{self.file_path.stem}_split.pdf"
+            )
+            if not out_path:
+                return
+
             try:
                 output = self.splitter.split_by_y_coordinate(
                     str(self.file_path),
                     self.viewer.current_page,
-                    dialog.result
+                    dialog.result,
+                    output_path=out_path
                 )
                 self._update_status(f"Page split at Y={dialog.result:.0f}pt")
                 messagebox.showinfo(
@@ -1794,6 +1804,16 @@ class PDFEditorApp:
 
         if dialog.result is not None:
             search_text = dialog.result
+
+            out_path = filedialog.asksaveasfilename(
+                title="Lưu file Cắt OCR (Save As)",
+                defaultextension=".pdf",
+                filetypes=[("PDF files", "*.pdf")],
+                initialfile=f"{self.file_path.stem}_split.pdf"
+            )
+            if not out_path:
+                return
+
             self._update_status(f"Searching for text: '{search_text}'...")
             self.root.update()
 
@@ -1802,6 +1822,7 @@ class PDFEditorApp:
                     str(self.file_path),
                     self.viewer.current_page,
                     search_text,
+                    output_path=out_path,
                     margin_below=dialog.margin
                 )
                 self._update_status(
@@ -3725,6 +3746,15 @@ class PDFEditorApp:
                                 "Both start text and end text are required.")
             return
 
+        out_path = filedialog.asksaveasfilename(
+            title="Lưu file Cắt OCR (Save As)",
+            defaultextension=".pdf",
+            filetypes=[("PDF files", "*.pdf")],
+            initialfile=f"{self.file_path.stem}_ocr_cropped.pdf"
+        )
+        if not out_path:
+            return
+
         self._update_status(
             f"Crop between texts: scanning {len(pages)} pages..."
         )
@@ -3743,6 +3773,7 @@ class PDFEditorApp:
                     pages,
                     start_text,
                     end_text,
+                    output_path=out_path,
                     margin_above=margin_above,
                     margin_below=margin_below,
                     keep_unmatched=keep_unmatched,
