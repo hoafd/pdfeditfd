@@ -1,0 +1,6 @@
+{
+  "artifactType": "ARTIFACT_TYPE_IMPLEMENTATION_PLAN",
+  "summary": "Detailed implementation plan for building a fully offline, self-contained PDF editor application in c:\\Users\\admin\\Documents\\pdfeditfd. The app uses PyMuPDF, OpenCV, Tesseract OCR with a CustomTkinter GUI. Key features include: page splitting by Y-coordinate or after OCR-detected text, merge/split/rotate/crop pages, add text/images/watermarks, annotations/highlights, encrypt/decrypt, compress, extract text/images, and more. Everything runs in a local Python venv with Tesseract OCR bundled in the project directory.",
+  "updatedAt": "2026-05-27T14:09:13.615204100Z",
+  "requestFeedback": true
+}
