@@ -797,15 +797,15 @@ class PDFEditorApp:
         self.status_bar.pack(fill=tk.X, side=tk.BOTTOM)
         self.status_bar.pack_propagate(False)
 
-        inner = tk.Frame(self.status_bar, bg=COLORS["bg_panel"])
-        inner.pack(fill=tk.BOTH, expand=True, padx=10)
+        self.status_inner = tk.Frame(self.status_bar, bg=COLORS["bg_panel"])
+        self.status_inner.pack(fill=tk.BOTH, expand=True, padx=10)
 
         # Left: status message
         self.status_var = tk.StringVar(
             value="Ready — Open a PDF file to begin"
         )
         status_label = tk.Label(
-            inner, textvariable=self.status_var,
+            self.status_inner, textvariable=self.status_var,
             bg=COLORS["bg_panel"], fg=COLORS["text_secondary"],
             font=("Segoe UI", 9), anchor="w"
         )
@@ -814,7 +814,7 @@ class PDFEditorApp:
         # Right: file info
         self.file_info_var = tk.StringVar(value="")
         file_info_label = tk.Label(
-            inner, textvariable=self.file_info_var,
+            self.status_inner, textvariable=self.file_info_var,
             bg=COLORS["bg_panel"], fg=COLORS["text_dim"],
             font=("Segoe UI", 9), anchor="e"
         )
@@ -823,7 +823,7 @@ class PDFEditorApp:
         # Right: CPU/tab info
         self._worker_info_var = tk.StringVar(value="")
         worker_label = tk.Label(
-            inner, textvariable=self._worker_info_var,
+            self.status_inner, textvariable=self._worker_info_var,
             bg=COLORS["bg_panel"], fg=COLORS["accent_light"],
             font=("Segoe UI", 8), anchor="e"
         )
@@ -1805,10 +1805,10 @@ class PDFEditorApp:
         self._update_display()
         
         # Add 'Apply' button to status bar temporarily
-        self._apply_crop_btn = tk.Button(self.status_bar, text="✅ Apply Crop", 
+        self._apply_crop_btn = tk.Button(self.status_inner, text="✅ Apply Crop", 
                                         command=self.apply_multi_split,
-                                        bg=COLORS["accent"], fg="white", bd=0, padx=8)
-        self._apply_crop_btn.pack(side=tk.RIGHT, padx=5, pady=2)
+                                        bg=COLORS["accent"], fg="white", bd=0, padx=10)
+        self._apply_crop_btn.pack(side=tk.RIGHT, padx=5)
         
         self._update_status("✂️ MULTI-CROP: Click to set pairs of Y coordinates. Press ESC to cancel.")
 
