@@ -757,7 +757,6 @@ class SmartPageSplitter:
         
         from src.batch_processor import get_shared_processor
         processor = get_shared_processor()
-        processor.set_workers(task_type="ocr")
         
         def _ocr_worker(page_num, idx, total):
             # Worker function: opens its own fitz.doc to avoid thread issues
