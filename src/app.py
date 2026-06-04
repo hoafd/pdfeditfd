@@ -1775,8 +1775,9 @@ class PDFEditorApp:
                 return
 
             try:
+                src_path = self._get_current_pdf_path_for_batch()
                 output = self.splitter.split_by_y_coordinate(
-                    str(self.file_path),
+                    src_path,
                     self.viewer.current_page,
                     dialog.result,
                     output_path=out_path
@@ -1818,8 +1819,9 @@ class PDFEditorApp:
             self.root.update()
 
             try:
+                src_path = self._get_current_pdf_path_for_batch()
                 output = self.splitter.split_after_text(
-                    str(self.file_path),
+                    src_path,
                     self.viewer.current_page,
                     search_text,
                     output_path=out_path,
@@ -1850,8 +1852,9 @@ class PDFEditorApp:
         self.root.update()
 
         try:
+            src_path = self._get_current_pdf_path_for_batch()
             split_points = self.splitter.auto_detect_split_points(
-                str(self.file_path), self.viewer.current_page
+                src_path, self.viewer.current_page
             )
 
             if not split_points:
@@ -2409,8 +2412,9 @@ class PDFEditorApp:
             if not out_dir:
                 return
 
+            src_path = self._get_current_pdf_path_for_batch()
             outputs = self.operations.split_by_pages(
-                str(self.file_path), ranges, output_dir=out_dir
+                src_path, ranges, output_dir=out_dir
             )
             messagebox.showinfo(
                 "Success",
@@ -2452,7 +2456,7 @@ class PDFEditorApp:
                 return
 
             outputs = self.operations.split_by_pages(
-                str(self.file_path), ranges, output_dir=out_dir
+                self._get_current_pdf_path_for_batch(), ranges, output_dir=out_dir
             )
             messagebox.showinfo(
                 t("success", "Success"),
@@ -2522,10 +2526,15 @@ class PDFEditorApp:
             if not out_path:
                 return
 
-            output = self.operations.extract_pages([page_num], output_path=out_path)
+            import fitz
+            new_doc = fitz.open()
+            new_doc.insert_pdf(self.doc, from_page=page_num, to_page=page_num)
+            new_doc.save(out_path, garbage=4, deflate=True)
+            new_doc.close()
+            
             messagebox.showinfo(
                 "Success",
-                f"Page {page_num + 1} extracted to:\n{output}"
+                f"Page {page_num + 1} extracted to:\n{out_path}"
             )
         except Exception as e:
             messagebox.showerror("Error", f"Extract failed:\n{e}")
@@ -2546,8 +2555,9 @@ class PDFEditorApp:
             if not out_path:
                 return
 
+            src_path = self._get_current_pdf_path_for_batch()
             output, orig_size, new_size = self.operations.compress_pdf(
-                str(self.file_path), output_path=out_path
+                src_path, output_path=out_path
             )
             reduction = (1 - new_size / orig_size) * 100 if orig_size > 0 else 0
             messagebox.showinfo(
@@ -2582,8 +2592,9 @@ class PDFEditorApp:
                 return
                 
             try:
+                src_path = self._get_current_pdf_path_for_batch()
                 output = self.security.encrypt_pdf(
-                    str(self.file_path),
+                    src_path,
                     dialog.result["user_password"],
                     dialog.result.get("owner_password"),
                     permissions=dialog.result.get("permissions"),
@@ -2888,6 +2899,21 @@ class PDFEditorApp:
         """Update the status bar message."""
         self.status_var.set(message)
         logger.info(message)
+
+    def _get_current_pdf_path_for_batch(self):
+        """
+        Return the path to the current document for batch operations.
+        If the document has unsaved edits, it saves to a temp file first.
+        """
+        if not self._undo_stack:
+            return str(self.file_path)
+            
+        import tempfile
+        import os
+        fd, path = tempfile.mkstemp(suffix=".pdf", prefix="pdf_edit_tmp_")
+        os.close(fd)
+        self.doc.save(path, garbage=4, deflate=True)
+        return path
 
     # ═══════════════════════════════════════════════════════════════════════
     #  NEW: Additional Features
@@ -3674,9 +3700,10 @@ class PDFEditorApp:
             self.root.update()
 
         try:
+            src_path = self._get_current_pdf_path_for_batch()
             output_path, found_count, not_found = \
                 self.splitter.split_batch_after_text(
-                    str(self.file_path),
+                    src_path,
                     pages,
                     search_text,
                     output_path=out_path,
@@ -3767,9 +3794,10 @@ class PDFEditorApp:
         template_page_num = self.viewer.current_page if dialog.result.get("use_template") else None
 
         try:
+            src_path = self._get_current_pdf_path_for_batch()
             output_path, total_crops, skipped = \
                 self.splitter.crop_between_texts(
-                    str(self.file_path),
+                    src_path,
                     pages,
                     start_text,
                     end_text,
