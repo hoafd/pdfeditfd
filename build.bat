@@ -36,7 +36,7 @@ echo.
 
 REM Build the exe with PyInstaller
 pyinstaller ^
-    --onefile ^
+    --onedir ^
     --windowed ^
     --name "PDFEditorPro" ^
     --icon "NONE" ^
@@ -71,16 +71,20 @@ if errorlevel 1 (
 )
 
 echo.
+echo [*] Zipping distribution folder...
+python -c "import shutil; shutil.make_archive('dist/PDFEditorPro_Portable', 'zip', 'dist', 'PDFEditorPro')"
+
+echo.
 echo ===================================================
 echo   BUILD SUCCESSFUL!
 echo ===================================================
 echo.
-echo   Output: dist\PDFEditorPro.exe
+echo   Output Directory: dist\PDFEditorPro
+echo   Zipped Package: dist\PDFEditorPro_Portable.zip
 echo.
-echo   To distribute, copy:
-echo     - dist\PDFEditorPro.exe
+echo   To distribute, share the zip file.
 echo.
-echo   The EXE includes Tesseract OCR and Poppler.
+echo   The folder includes Tesseract OCR and Poppler.
 echo ===================================================
 echo.
 pause

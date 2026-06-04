@@ -8,3 +8,5 @@ output/
 *.pdf
 *.log
 .DS_Store
+build/
+dist/
