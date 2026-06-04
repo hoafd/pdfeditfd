@@ -477,13 +477,13 @@ class PDFEditorApp:
         }
 
         # File buttons
-        tk.Button(inner, text="📂 Open", command=self.open_file,
+        tk.Button(inner, text="📂 Mở", command=self.open_file,
                   **btn_style).pack(side=tk.LEFT, padx=2)
-        tk.Button(inner, text="💾 Save", command=self.save_file,
+        tk.Button(inner, text="💾 Lưu", command=self.save_file,
                   **btn_style).pack(side=tk.LEFT, padx=2)
-        tk.Button(inner, text="📄 Merge", command=self.merge_pdfs,
+        tk.Button(inner, text="📄 Gộp", command=self.merge_pdfs,
                   **btn_style).pack(side=tk.LEFT, padx=2)
-        tk.Button(inner, text="✂️ Split", command=self.split_by_pages_dialog,
+        tk.Button(inner, text="✂️ Tách", command=self.split_by_pages_dialog,
                   **btn_style).pack(side=tk.LEFT, padx=2)
 
         # Separator
@@ -527,7 +527,7 @@ class PDFEditorApp:
 
         tk.Button(inner, text="🔍+", command=self.zoom_in,
                   **btn_style).pack(side=tk.LEFT, padx=1)
-        tk.Button(inner, text="Fit W", command=self.fit_width,
+        tk.Button(inner, text="Vừa trang", command=self.fit_width,
                   **btn_style).pack(side=tk.LEFT, padx=2)
 
         # Separator
@@ -535,7 +535,7 @@ class PDFEditorApp:
         sep3.pack(side=tk.LEFT, padx=8, pady=4)
         
         # View Mode Toggle
-        self._view_mode_btn = tk.Button(inner, text="📜 Continuous", command=self.toggle_view_mode,
+        self._view_mode_btn = tk.Button(inner, text="📜 Cuộn liên tục", command=self.toggle_view_mode,
                                         bg=COLORS["accent"], fg="white", activebackground=COLORS["accent"],
                                         activeforeground="white", relief=tk.FLAT, bd=0, padx=12, pady=4,
                                         font=("Segoe UI", 10, "bold"), cursor="hand2")
@@ -546,16 +546,16 @@ class PDFEditorApp:
         split_btn_style["bg"] = COLORS["accent_dark"]
         split_btn_style["fg"] = "white"
 
-        tk.Button(inner, text="✂️ Split Y",
+        tk.Button(inner, text="✂️ Cắt Y",
                   command=self.smart_split_y_dialog,
                   **split_btn_style).pack(side=tk.LEFT, padx=2)
-        tk.Button(inner, text="🔍 Split OCR",
+        tk.Button(inner, text="🔍 Cắt OCR",
                   command=self.smart_split_text_dialog,
                   **split_btn_style).pack(side=tk.LEFT, padx=2)
-        tk.Button(inner, text="🖱️ Click Split",
+        tk.Button(inner, text="🖱️ Click Cắt",
                   command=self.enable_split_mode,
                   **split_btn_style).pack(side=tk.LEFT, padx=2)
-        tk.Button(inner, text="✂️ Multi-Crop",
+        tk.Button(inner, text="✂️ Cắt nhiều",
                   command=self.enable_multi_split_mode,
                   **split_btn_style).pack(side=tk.LEFT, padx=2)
 
@@ -563,10 +563,10 @@ class PDFEditorApp:
         sep4 = tk.Frame(inner, bg=COLORS["border"], width=2, height=30)
         sep4.pack(side=tk.LEFT, padx=8, pady=4)
 
-        tk.Button(inner, text="🔄 Rotate",
+        tk.Button(inner, text="🔄 Xoay",
                   command=lambda: self.rotate_current(90),
                   **btn_style).pack(side=tk.LEFT, padx=2)
-        tk.Button(inner, text="🗑️ Delete",
+        tk.Button(inner, text="🗑️ Xóa",
                   command=self.delete_current_page,
                   **btn_style).pack(side=tk.LEFT, padx=2)
 
@@ -1307,7 +1307,7 @@ class PDFEditorApp:
         if force_single or getattr(self, 'view_mode', 'single') == "continuous":
             self.view_mode = "single"
             if hasattr(self, '_view_mode_btn'):
-                self._view_mode_btn.config(text="📄 Single View", bg=COLORS["bg_card"])
+                self._view_mode_btn.config(text="📄 Trang đơn", bg=COLORS["bg_card"])
             if hasattr(self, '_continuous_images'):
                 self._continuous_images.clear()
             self._continuous_layouts = []
@@ -1315,7 +1315,7 @@ class PDFEditorApp:
         else:
             self.view_mode = "continuous"
             if hasattr(self, '_view_mode_btn'):
-                self._view_mode_btn.config(text="📜 Continuous", bg=COLORS["accent"])
+                self._view_mode_btn.config(text="📜 Cuộn liên tục", bg=COLORS["accent"])
             self._continuous_layouts = []
             self._update_display()
 
@@ -1419,7 +1419,7 @@ class PDFEditorApp:
             closest_page = min(visible_pages, key=lambda l: abs((l['y_start'] + l['y_end'])/2 - center_y))['page']
             if self.viewer.current_page != closest_page:
                 self.viewer.current_page = closest_page
-                self._update_status_bar_page()
+                self.page_entry_var.set(f"{closest_page + 1} / {self.viewer.page_count}")
                 self._update_sidebar_selection()
 
     def _update_display(self):
@@ -4132,7 +4132,7 @@ class _BatchCropBetweenTextsDialog(tk.Toplevel):
 
     def __init__(self, parent, total_pages=0, initial_range="all"):
         super().__init__(parent)
-        self.title("✂️ Crop Between Texts (OCR)")
+        self.title("✂️ Cắt giữa hai đoạn chữ (OCR)")
         self.geometry("520x580")
         self.configure(bg=COLORS["bg_card"])
         self.resizable(False, False)
@@ -4142,16 +4142,16 @@ class _BatchCropBetweenTextsDialog(tk.Toplevel):
 
         # Title
         tk.Label(
-            self, text="✂️ Crop Between Texts",
+            self, text="✂️ Cắt giữa hai đoạn chữ",
             bg=COLORS["bg_card"], fg=COLORS["accent_light"],
             font=("Segoe UI", 14, "bold")
         ).pack(pady=(12, 3))
 
         tk.Label(
             self,
-            text="Keep ONLY content between start and end text.\n"
-                 "1 page can produce MULTIPLE pages if pattern repeats.\n"
-                 "Everything outside the range is discarded.",
+            text="CHỈ giữ lại nội dung nằm giữa đoạn chữ Bắt đầu và Kết thúc.\n"
+                 "1 trang có thể sinh ra NHIỀU trang nếu mẫu lặp lại.\n"
+                 "Mọi thứ nằm ngoài vùng chọn sẽ bị xóa bỏ.",
             bg=COLORS["bg_card"], fg=COLORS["text_secondary"],
             font=("Segoe UI", 9), justify=tk.CENTER
         ).pack(pady=3)
@@ -4161,7 +4161,7 @@ class _BatchCropBetweenTextsDialog(tk.Toplevel):
 
         # ─── Start text ───
         tk.Label(
-            fields, text="Start text (begin of region):",
+            fields, text="Đoạn chữ BẮT ĐẦU vùng cắt:",
             bg=COLORS["bg_card"], fg=COLORS["text_primary"],
             font=("Segoe UI", 11, "bold")
         ).pack(anchor="w", pady=(8, 0))
@@ -4177,7 +4177,7 @@ class _BatchCropBetweenTextsDialog(tk.Toplevel):
 
         # ─── End text ───
         tk.Label(
-            fields, text="End text (end of region):",
+            fields, text="Đoạn chữ KẾT THÚC vùng cắt:",
             bg=COLORS["bg_card"], fg=COLORS["text_primary"],
             font=("Segoe UI", 11, "bold")
         ).pack(anchor="w", pady=(10, 0))
@@ -4192,7 +4192,7 @@ class _BatchCropBetweenTextsDialog(tk.Toplevel):
 
         # ─── Page range ───
         tk.Label(
-            fields, text="Page range:",
+            fields, text="Phạm vi trang:",
             bg=COLORS["bg_card"], fg=COLORS["text_primary"],
             font=("Segoe UI", 10)
         ).pack(anchor="w", pady=(10, 0))
@@ -4217,28 +4217,28 @@ class _BatchCropBetweenTextsDialog(tk.Toplevel):
             "font": ("Segoe UI", 8), "cursor": "hand2",
         }
         tk.Button(
-            quick_frame, text="All",
+            quick_frame, text="Tất cả",
             command=lambda: self._set_range("all"), **qbtn
         ).pack(side=tk.LEFT, padx=1)
         tk.Button(
-            quick_frame, text="Odd",
+            quick_frame, text="Lẻ",
             command=lambda: self._set_range(
                 ", ".join(str(i) for i in range(1, total_pages + 1, 2))
             ), **qbtn
         ).pack(side=tk.LEFT, padx=1)
         tk.Button(
-            quick_frame, text="Even",
+            quick_frame, text="Chẵn",
             command=lambda: self._set_range(
                 ", ".join(str(i) for i in range(2, total_pages + 1, 2))
             ), **qbtn
         ).pack(side=tk.LEFT, padx=1)
         tk.Button(
-            quick_frame, text="1st Half",
+            quick_frame, text="Nửa đầu",
             command=lambda: self._set_range(f"1-{total_pages // 2}"),
             **qbtn
         ).pack(side=tk.LEFT, padx=1)
         tk.Button(
-            quick_frame, text="2nd Half",
+            quick_frame, text="Nửa sau",
             command=lambda: self._set_range(
                 f"{total_pages // 2 + 1}-{total_pages}"
             ), **qbtn
@@ -4249,7 +4249,7 @@ class _BatchCropBetweenTextsDialog(tk.Toplevel):
         margin_frame.pack(fill=tk.X, pady=(10, 0))
 
         tk.Label(
-            margin_frame, text="Margin above (pt):",
+            margin_frame, text="Căn lề trên (pt):",
             bg=COLORS["bg_card"], fg=COLORS["text_primary"],
             font=("Segoe UI", 9)
         ).pack(side=tk.LEFT)
@@ -4263,7 +4263,7 @@ class _BatchCropBetweenTextsDialog(tk.Toplevel):
         self.margin_above_entry.insert(0, "5")
 
         tk.Label(
-            margin_frame, text="  Margin below (pt):",
+            margin_frame, text="  Căn lề dưới (pt):",
             bg=COLORS["bg_card"], fg=COLORS["text_primary"],
             font=("Segoe UI", 9)
         ).pack(side=tk.LEFT)
@@ -4280,7 +4280,7 @@ class _BatchCropBetweenTextsDialog(tk.Toplevel):
         self.template_var = tk.BooleanVar(value=True)
         tk.Checkbutton(
             fields,
-            text="Use current page as template (Fast! OCR runs once)",
+            text="Dùng trang hiện tại làm mẫu chuẩn (Nhanh! Quét OCR 1 lần duy nhất)",
             variable=self.template_var,
             bg=COLORS["bg_card"], fg=COLORS["text_primary"],
             selectcolor=COLORS["bg_dark"],
@@ -4292,7 +4292,7 @@ class _BatchCropBetweenTextsDialog(tk.Toplevel):
         self.keep_var = tk.BooleanVar(value=False)
         tk.Checkbutton(
             fields,
-            text="Keep pages where text is NOT found (copy as-is)",
+            text="Giữ nguyên các trang không tìm thấy chữ (không cắt bỏ)",
             variable=self.keep_var,
             bg=COLORS["bg_card"], fg=COLORS["text_primary"],
             selectcolor=COLORS["bg_dark"],
@@ -4303,8 +4303,8 @@ class _BatchCropBetweenTextsDialog(tk.Toplevel):
         # ─── Info ───
         tk.Label(
             self,
-            text=f"Total: {total_pages} pages  |  OCR: Tesseract  |  "
-                 "1 page can produce multiple cropped pages",
+            text=f"Tổng số: {total_pages} trang  |  Công cụ OCR: Tesseract  |  "
+                 "1 trang có thể sinh ra nhiều trang nhỏ hơn",
             bg=COLORS["bg_card"], fg=COLORS["text_dim"],
             font=("Segoe UI", 8)
         ).pack(pady=(6, 0))
@@ -4314,14 +4314,14 @@ class _BatchCropBetweenTextsDialog(tk.Toplevel):
         btn_frame.pack(pady=10)
 
         tk.Button(
-            btn_frame, text="✂️ Crop Pages", command=self._ok,
+            btn_frame, text="✂️ Thực hiện Cắt", command=self._ok,
             bg=COLORS["accent"], fg="white",
             font=("Segoe UI", 11, "bold"),
             relief=tk.FLAT, padx=25, pady=6, cursor="hand2"
         ).pack(side=tk.LEFT, padx=8)
 
         tk.Button(
-            btn_frame, text="Cancel", command=self.destroy,
+            btn_frame, text="Hủy", command=self.destroy,
             bg=COLORS["bg_hover"], fg=COLORS["text_secondary"],
             font=("Segoe UI", 11),
             relief=tk.FLAT, padx=20, pady=6, cursor="hand2"
