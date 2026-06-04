@@ -155,6 +155,9 @@ class PDFEditorApp:
         self.viewer = PDFViewer()
         self.operations = PDFOperations()
         self.splitter = SmartPageSplitter()
+        self.view_mode = "continuous"
+        self._continuous_layouts = []
+        self._continuous_images = {}
         self.annotations = PDFAnnotations()
         self.security = PDFSecurity()
         self.text_image = PDFTextImage()
@@ -530,6 +533,13 @@ class PDFEditorApp:
         # Separator
         sep3 = tk.Frame(inner, bg=COLORS["border"], width=2, height=30)
         sep3.pack(side=tk.LEFT, padx=8, pady=4)
+        
+        # View Mode Toggle
+        self._view_mode_btn = tk.Button(inner, text="📜 Continuous", command=self.toggle_view_mode,
+                                        bg=COLORS["accent"], fg="white", activebackground=COLORS["accent"],
+                                        activeforeground="white", relief=tk.FLAT, bd=0, padx=12, pady=4,
+                                        font=("Segoe UI", 10, "bold"), cursor="hand2")
+        self._view_mode_btn.pack(side=tk.LEFT, padx=2)
 
         # Quick tools
         split_btn_style = btn_style.copy()
@@ -909,6 +919,14 @@ class PDFEditorApp:
         tab = PageTab(page_num, self._tab_container)
         tab.zoom_level = self.viewer.zoom_level
         self._bind_canvas_events(tab.canvas)
+        
+        # Hook v_scroll for continuous mode
+        def _on_vscroll(*args):
+            tab.canvas.yview(*args)
+            if getattr(self, 'view_mode', 'single') == 'continuous':
+                self._render_continuous_view()
+        tab.v_scroll.config(command=_on_vscroll)
+        
         self._tabs.append(tab)
 
         # Create tab button in tab bar
@@ -1284,12 +1302,136 @@ class PDFEditorApp:
             fill=COLORS["text_dim"]
         )
 
+    def toggle_view_mode(self, force_single=False):
+        """Toggle between single page and continuous viewing mode."""
+        if force_single or getattr(self, 'view_mode', 'single') == "continuous":
+            self.view_mode = "single"
+            if hasattr(self, '_view_mode_btn'):
+                self._view_mode_btn.config(text="📄 Single View", bg=COLORS["bg_card"])
+            if hasattr(self, '_continuous_images'):
+                self._continuous_images.clear()
+            self._continuous_layouts = []
+            self._update_display()
+        else:
+            self.view_mode = "continuous"
+            if hasattr(self, '_view_mode_btn'):
+                self._view_mode_btn.config(text="📜 Continuous", bg=COLORS["accent"])
+            self._continuous_layouts = []
+            self._update_display()
+
+    def _calculate_continuous_layout(self):
+        """Calculate coordinates and dimensions for all pages in continuous view."""
+        self._continuous_layouts = []
+        if not self.doc: return
+        
+        y_offset = 20
+        zoom = self.viewer.zoom_level
+        cw = self.canvas.winfo_width()
+        
+        for i in range(self.doc.page_count):
+            page = self.doc[i]
+            w, h = page.rect.width, page.rect.height
+            if page.rotation in (90, 270):
+                w, h = h, w
+                
+            sw = int(w * zoom * 1.5)
+            sh = int(h * zoom * 1.5)
+            
+            x_start = max(0, (cw - sw) // 2)
+            
+            self._continuous_layouts.append({
+                'page': i,
+                'y_start': y_offset,
+                'y_end': y_offset + sh,
+                'width': sw,
+                'height': sh,
+                'x_start': x_start
+            })
+            y_offset += sh + 20
+
+    def _render_continuous_view(self):
+        """Render visible pages in continuous scroll mode."""
+        if not self.doc: return
+        
+        cw = self.canvas.winfo_width()
+        ch = self.canvas.winfo_height()
+        if cw <= 1 or ch <= 1: return
+            
+        if not hasattr(self, '_continuous_layouts') or not self._continuous_layouts:
+            self._calculate_continuous_layout()
+            
+        if not self._continuous_layouts:
+            return
+            
+        total_h = self._continuous_layouts[-1]['y_end'] + 20
+        max_w = max((l['width'] for l in self._continuous_layouts), default=cw)
+        
+        self.canvas.configure(scrollregion=(0, 0, max(cw, max_w + 40), max(ch, total_h)))
+        
+        yview = self.canvas.yview()
+        if not yview: return
+        
+        vp_top = yview[0] * total_h
+        vp_bottom = yview[1] * total_h
+        
+        buffer = ch
+        view_top = vp_top - buffer
+        view_bottom = vp_bottom + buffer
+        
+        visible_pages = []
+        for l in self._continuous_layouts:
+            if l['y_end'] > view_top and l['y_start'] < view_bottom:
+                visible_pages.append(l)
+                
+        if not hasattr(self, '_continuous_images'):
+            self._continuous_images = {}
+            
+        current_visible = set(l['page'] for l in visible_pages)
+        
+        for p in list(self._continuous_images.keys()):
+            if p not in current_visible:
+                self.canvas.delete(f"page_{p}")
+                del self._continuous_images[p]
+                
+        for l in visible_pages:
+            p = l['page']
+            if p not in self._continuous_images:
+                img = self.viewer.get_page_image(p)
+                if img:
+                    photo = ImageTk.PhotoImage(img)
+                    self._continuous_images[p] = photo
+                    
+                    self.canvas.create_rectangle(
+                        l['x_start']-1, l['y_start']-1,
+                        l['x_start']+l['width']+1, l['y_start']+l['height']+1,
+                        outline="#555555", fill=COLORS["bg_card"],
+                        tags=(f"page_{p}", "continuous_page_bg")
+                    )
+                    
+                    self.canvas.create_image(
+                        l['x_start'], l['y_start'],
+                        image=photo, anchor="nw",
+                        tags=(f"page_{p}", "continuous_page")
+                    )
+                    
+        if visible_pages:
+            center_y = (vp_top + vp_bottom) / 2
+            closest_page = min(visible_pages, key=lambda l: abs((l['y_start'] + l['y_end'])/2 - center_y))['page']
+            if self.viewer.current_page != closest_page:
+                self.viewer.current_page = closest_page
+                self._update_status_bar_page()
+                self._update_sidebar_selection()
+
     def _update_display(self):
         """Update the active tab's canvas with the current page."""
         if not self.doc:
             return
 
         self.canvas.delete("all")
+        
+        if getattr(self, 'view_mode', 'single') == "continuous":
+            self._render_continuous_view()
+            return
 
         try:
             img = self.viewer.get_page_image(self.viewer.current_page)
@@ -1770,11 +1912,18 @@ class PDFEditorApp:
 
     # ─── Interactive Split Mode ──────────────────────────────────────────
 
+    def _ensure_single_mode_for_editing(self, feature_name):
+        if getattr(self, 'view_mode', 'single') == "continuous":
+            self.toggle_view_mode(force_single=True)
+            messagebox.showinfo("Mode Switched", f"Switched to Single Page View for {feature_name}.")
+
     def enable_split_mode(self):
         """Enable interactive split mode - click on canvas to set split point."""
         if not self.doc:
             messagebox.showwarning("Warning", "No document is open.")
             return
+            
+        self._ensure_single_mode_for_editing("Click Split")
 
         self.split_mode = True
         self.split_line_y = None
@@ -1797,6 +1946,8 @@ class PDFEditorApp:
         if not self.doc:
             messagebox.showwarning("Warning", "No document is open.")
             return
+            
+        self._ensure_single_mode_for_editing("Multi Crop")
 
         self.multi_split_mode = True
         self.multi_split_points = []
@@ -2009,9 +2160,15 @@ class PDFEditorApp:
     # ─── Mouse Wheel Scroll ──────────────────────────────────────────
 
     def _on_canvas_mousewheel(self, event):
-        """Handle mouse wheel scroll on canvas — scroll page vertically."""
+        """Handle mouse wheel scroll on canvas - scroll page vertically."""
         if not self.doc:
             return
+            
+        if getattr(self, 'view_mode', 'single') == 'continuous':
+            self.canvas.yview_scroll(-1 * (event.delta // 120), "units")
+            self._render_continuous_view()
+            return
+            
         # Check scroll region: if image fits in canvas, change page instead
         scroll_region = self.canvas.cget("scrollregion")
         if scroll_region:
@@ -2020,10 +2177,10 @@ class PDFEditorApp:
                 total_h = float(parts[3])
                 canvas_h = self.canvas.winfo_height()
                 if total_h > canvas_h:
-                    # Scrollable — scroll the canvas
+                    # Scrollable - scroll the canvas
                     self.canvas.yview_scroll(-1 * (event.delta // 120), "units")
                     return
-        # Not scrollable — change page
+        # Not scrollable - change page
         if event.delta > 0:
             self.prev_page()
         else:
