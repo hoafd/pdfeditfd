@@ -1429,7 +1429,7 @@ class PDFEditorApp:
             if self.viewer.current_page != closest_page:
                 self.viewer.current_page = closest_page
                 self.page_entry_var.set(f"{closest_page + 1} / {self.viewer.page_count}")
-                self._update_sidebar_selection()
+                self._sync_tab_state()
 
     def _update_display(self):
         """Update the active tab's canvas with the current page."""
