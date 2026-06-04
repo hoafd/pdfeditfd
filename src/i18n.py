@@ -20,6 +20,7 @@ TRANSLATIONS = {
         "file_recent": "📋 Recent Files",
         "file_merge": "📄 Merge PDFs...",
         "file_split_pages": "📑 Split by Pages...",
+        "file_split_every_n": "📑 Split every N pages...",
         "file_compress": "📦 Compress PDF",
         "file_export_img": "🖼️ Export Page as Image...",
         "file_print": "🖨️ Print...",
@@ -88,6 +89,7 @@ TRANSLATIONS = {
         "sb_all": "All",
         "sb_odd": "Odd",
         "sb_even": "Even",
+        "sb_custom": "Custom",
         "sb_clear": "Clear",
 
         # General
@@ -114,6 +116,7 @@ TRANSLATIONS = {
         "file_recent": "📋 Tệp gần đây",
         "file_merge": "📄 Gộp nhiều PDF...",
         "file_split_pages": "📑 Tách theo trang...",
+        "file_split_every_n": "📑 Tách cứ mỗi N trang thành 1 file...",
         "file_compress": "📦 Nén PDF",
         "file_export_img": "🖼️ Xuất trang thành ảnh...",
         "file_print": "🖨️ In...",
@@ -182,6 +185,7 @@ TRANSLATIONS = {
         "sb_all": "Tất cả",
         "sb_odd": "Lẻ",
         "sb_even": "Chẵn",
+        "sb_custom": "Tùy chọn",
         "sb_clear": "Bỏ chọn",
 
         # General
@@ -195,7 +199,7 @@ TRANSLATIONS = {
     }
 }
 
-_current_lang = "en"
+_current_lang = "vi"
 
 def init_i18n():
     global _current_lang
@@ -203,7 +207,7 @@ def init_i18n():
         if SETTINGS_FILE.exists():
             with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
                 data = json.load(f)
-                lang = data.get("language", "en")
+                lang = data.get("language", "vi")
                 if lang in TRANSLATIONS:
                     _current_lang = lang
     except Exception as e:

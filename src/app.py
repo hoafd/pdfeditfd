@@ -269,6 +269,8 @@ class PDFEditorApp:
                               command=self.merge_pdfs)
         file_menu.add_command(label=t("file_split_pages"),
                               command=self.split_by_pages_dialog)
+        file_menu.add_command(label=t("file_split_every_n"),
+                              command=self.split_every_n_pages_dialog)
         file_menu.add_command(label=t("file_compress"),
                               command=self.compress_pdf)
         file_menu.add_separator()
@@ -360,6 +362,10 @@ class PDFEditorApp:
         split_menu.add_command(
             label=t("split_pct"),
             command=self.smart_split_percentage_dialog
+        )
+        split_menu.add_command(
+            label=t("file_split_every_n"),
+            command=self.split_every_n_pages_dialog
         )
         split_menu.add_command(
             label=t("split_all_y"),
@@ -576,17 +582,27 @@ class PDFEditorApp:
         sel_toolbar = tk.Frame(self.sidebar, bg=COLORS["bg_panel"])
         sel_toolbar.pack(fill=tk.X, padx=8, pady=(4, 8))
         
+        row1 = tk.Frame(sel_toolbar, bg=COLORS["bg_panel"])
+        row1.pack(fill=tk.X, pady=(0, 2))
+        
+        row2 = tk.Frame(sel_toolbar, bg=COLORS["bg_panel"])
+        row2.pack(fill=tk.X)
+        
         btn_font = ("Segoe UI", 8)
-        tk.Button(sel_toolbar, text=t("sb_all"), command=self._select_all,
+        tk.Button(row1, text=t("sb_all"), command=self._select_all,
+                  bg=COLORS["bg_card"], fg=COLORS["text_primary"],
+                  relief=tk.FLAT, font=btn_font, width=5).pack(side=tk.LEFT, padx=1)
+        tk.Button(row1, text=t("sb_odd"), command=self._select_odd,
+                  bg=COLORS["bg_card"], fg=COLORS["text_primary"],
+                  relief=tk.FLAT, font=btn_font, width=5).pack(side=tk.LEFT, padx=1)
+        tk.Button(row1, text=t("sb_even"), command=self._select_even,
+                  bg=COLORS["bg_card"], fg=COLORS["text_primary"],
+                  relief=tk.FLAT, font=btn_font, width=5).pack(side=tk.LEFT, padx=1)
+                  
+        tk.Button(row2, text=t("sb_custom"), command=self._select_custom_dialog,
                   bg=COLORS["bg_card"], fg=COLORS["text_primary"],
                   relief=tk.FLAT, font=btn_font).pack(side=tk.LEFT, padx=1)
-        tk.Button(sel_toolbar, text=t("sb_odd"), command=self._select_odd,
-                  bg=COLORS["bg_card"], fg=COLORS["text_primary"],
-                  relief=tk.FLAT, font=btn_font).pack(side=tk.LEFT, padx=1)
-        tk.Button(sel_toolbar, text=t("sb_even"), command=self._select_even,
-                  bg=COLORS["bg_card"], fg=COLORS["text_primary"],
-                  relief=tk.FLAT, font=btn_font).pack(side=tk.LEFT, padx=1)
-        tk.Button(sel_toolbar, text=t("sb_clear"), command=self._clear_selection,
+        tk.Button(row2, text=t("sb_clear"), command=self._clear_selection,
                   bg=COLORS["bg_card"], fg=COLORS["text_secondary"],
                   relief=tk.FLAT, font=btn_font).pack(side=tk.RIGHT, padx=1)
 
@@ -774,11 +790,11 @@ class PDFEditorApp:
 
     def _build_status_bar(self):
         """Build the bottom status bar with tab/CPU/progress info."""
-        status_frame = tk.Frame(self.root, bg=COLORS["bg_panel"], height=30)
-        status_frame.pack(fill=tk.X, side=tk.BOTTOM)
-        status_frame.pack_propagate(False)
+        self.status_bar = tk.Frame(self.root, bg=COLORS["bg_panel"], height=30)
+        self.status_bar.pack(fill=tk.X, side=tk.BOTTOM)
+        self.status_bar.pack_propagate(False)
 
-        inner = tk.Frame(status_frame, bg=COLORS["bg_panel"])
+        inner = tk.Frame(self.status_bar, bg=COLORS["bg_panel"])
         inner.pack(fill=tk.BOTH, expand=True, padx=10)
 
         # Left: status message
@@ -1470,6 +1486,42 @@ class PDFEditorApp:
         self._update_thumbnails()
         self._update_status(f"Selected even pages")
 
+    def _select_custom_dialog(self):
+        if not self.doc: return
+        prompt = t("prompt_custom_pages", "Enter page ranges (e.g. 1-5, 8, 11-13):")
+        result = simpledialog.askstring("Custom Selection", prompt, parent=self.root)
+        if not result: return
+        
+        selected = set()
+        total = self.doc.page_count
+        
+        try:
+            parts = [p.strip() for p in result.split(",")]
+            for p in parts:
+                if not p: continue
+                if "-" in p:
+                    start_s, end_s = p.split("-", 1)
+                    start = int(start_s.strip())
+                    end = int(end_s.strip())
+                    start = max(1, min(start, total))
+                    end = max(1, min(end, total))
+                    if start <= end:
+                        for i in range(start, end + 1):
+                            selected.add(i - 1)
+                    else:
+                        for i in range(start, end - 1, -1):
+                            selected.add(i - 1)
+                else:
+                    val = int(p)
+                    if 1 <= val <= total:
+                        selected.add(val - 1)
+            
+            self.selected_pages = selected
+            self._update_thumbnails()
+            self._update_status(f"Custom selection: {len(selected)} pages")
+        except ValueError:
+            messagebox.showerror(t("error"), t("error_invalid_range", "Invalid page range format."))
+
     def _clear_selection(self):
         self.selected_pages.clear()
         self._update_thumbnails()
@@ -2113,6 +2165,43 @@ class PDFEditorApp:
             )
         except Exception as e:
             messagebox.showerror("Error", f"Split failed:\n{e}")
+
+    def split_every_n_pages_dialog(self):
+        """Split PDF every N pages."""
+        if not self.doc:
+            messagebox.showwarning(t("warning", "Warning"), "No document is open.")
+            return
+
+        result = simpledialog.askinteger(
+            t("file_split_every_n", "Split every N pages"),
+            f"Total pages: {self.doc.page_count}\n"
+            "Split into files of how many pages?",
+            initialvalue=1,
+            minvalue=1,
+            maxvalue=self.doc.page_count
+        )
+
+        if not result:
+            return
+
+        try:
+            ranges = []
+            start = 0
+            while start < self.doc.page_count:
+                end = min(start + result - 1, self.doc.page_count - 1)
+                ranges.append((start, end))
+                start += result
+
+            outputs = self.operations.split_by_pages(
+                str(self.file_path), ranges
+            )
+            messagebox.showinfo(
+                t("success", "Success"),
+                f"Split into {len(outputs)} files:\n" +
+                "\n".join(str(p) for p in outputs)
+            )
+        except Exception as e:
+            messagebox.showerror(t("error", "Error"), f"Split failed:\n{e}")
 
     def rotate_current(self, angle):
         """Rotate the current page or selected pages."""
