@@ -827,6 +827,35 @@ class PDFEditorApp:
         self.context_menu.add_command(
             label="📋 Extract Page", command=self.extract_current_page)
 
+    def _build_thumb_context_menu(self):
+        """Build right-click context menu for thumbnails."""
+        from src.i18n import _ as t
+        self.thumb_menu = tk.Menu(
+            self.thumb_canvas, tearoff=0,
+            bg=COLORS["bg_card"], fg=COLORS["text_primary"],
+            activebackground=COLORS["accent"],
+            activeforeground="white",
+            relief=tk.FLAT, bd=1
+        )
+        self.thumb_menu.add_command(label="🔄 Xoay trang", command=self.batch_rotate_dialog)
+        self.thumb_menu.add_command(label=t("edit_del_page"), command=self.delete_current_page)
+        self.thumb_menu.add_command(label=t("edit_extract_page"), command=self.extract_current_page)
+        self.thumb_menu.add_separator()
+        self.thumb_menu.add_command(label=t("edit_insert_blank_before"), command=self.insert_blank_page_before)
+        self.thumb_menu.add_command(label=t("edit_insert_blank_after"), command=self.insert_blank_page_after)
+
+    def _show_thumb_context_menu(self, event):
+        """Show the right-click context menu for thumbnails."""
+        if not self.doc:
+            return
+        # If the user right-clicked on a specific thumbnail, select it first
+        widget = event.widget
+        # We don't have to select exactly, but we just pop up the menu
+        try:
+            self.thumb_menu.tk_popup(event.x_root, event.y_root)
+        finally:
+            self.thumb_menu.grab_release()
+
     def _build_status_bar(self):
         """Build the bottom status bar with tab/CPU/progress info."""
         self.status_bar = tk.Frame(self.root, bg=COLORS["bg_panel"], height=30)
@@ -1414,6 +1443,24 @@ class PDFEditorApp:
             
         current_visible = set(l['page'] for l in visible_pages)
         
+        # Update current page in toolbar based on center of viewport
+        vp_center = (vp_top + vp_bottom) / 2
+        center_page = None
+        min_dist = float('inf')
+        for l in visible_pages:
+            page_center = (l['y_start'] + l['y_end']) / 2
+            dist = abs(page_center - vp_center)
+            if dist < min_dist:
+                min_dist = dist
+                center_page = l['page']
+                
+        if center_page is not None and center_page != self.viewer.current_page:
+            self.viewer.current_page = center_page
+            if self.doc:
+                self.page_entry_var.set(f"{center_page + 1} / {self.doc.page_count}")
+                self._sync_tab_state()
+        
+        
         for p in list(self._continuous_images.keys()):
             if p not in current_visible:
                 self.canvas.delete(f"page_{p}")
@@ -1605,6 +1652,9 @@ class PDFEditorApp:
                 # Double-click: open in new tab
                 label.bind("<Double-Button-1>",
                            lambda e, pn=page_num: self._open_page_in_new_tab(pn))
+                # Right-click: context menu
+                label.bind("<Button-3>",
+                           lambda e, pn=page_num: self._on_thumb_right_click(e, pn))
         except Exception:
             pass
 
@@ -1706,6 +1756,18 @@ class PDFEditorApp:
         self.selected_pages.clear()
         self._update_thumbnails()
         self._update_status("Cleared selection")
+
+    def _on_thumb_right_click(self, event, page_num):
+        """Handle right-click on a thumbnail."""
+        if not self.doc:
+            return
+        # Go to the page first
+        self._goto_page(page_num)
+        # Show context menu
+        try:
+            self.thumb_menu.tk_popup(event.x_root, event.y_root)
+        finally:
+            self.thumb_menu.grab_release()
 
     def _goto_page(self, page_num):
         """Navigate to a specific page in the active tab."""
