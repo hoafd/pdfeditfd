@@ -26,6 +26,11 @@ try:
 except ImportError:
     easyocr = None
 
+try:
+    from paddleocr import PaddleOCR
+except ImportError:
+    PaddleOCR = None
+
 from src.utils import (
     get_tesseract_path, get_tessdata_dir, get_poppler_path,
     get_temp_dir, get_tools_dir, logger
@@ -49,9 +54,10 @@ class OCREngine:
         # Engine selection
         self.active_engine = "tesseract"
         self.easyocr_reader = None
+        self.paddleocr_reader = None
 
     def set_engine(self, engine_name):
-        """Switch OCR engine between 'tesseract' and 'easyocr'."""
+        """Switch OCR engine between 'tesseract', 'easyocr', and 'paddleocr'."""
         if engine_name == "easyocr":
             if easyocr is None:
                 raise ImportError("EasyOCR is not installed. Please install it first.")
@@ -61,6 +67,14 @@ class OCREngine:
                 self.easyocr_reader = easyocr.Reader(['vi', 'en'])
             self.active_engine = "easyocr"
             logger.info("OCR Engine switched to EasyOCR (GPU/CPU).")
+        elif engine_name == "paddleocr":
+            if PaddleOCR is None:
+                raise ImportError("PaddleOCR is not installed. Please install it first.")
+            if self.paddleocr_reader is None:
+                logger.info("Initializing PaddleOCR reader (this may take a moment)...")
+                self.paddleocr_reader = PaddleOCR(use_angle_cls=True, lang='vi')
+            self.active_engine = "paddleocr"
+            logger.info("OCR Engine switched to PaddleOCR (GPU/CPU).")
         else:
             self.active_engine = "tesseract"
             logger.info("OCR Engine switched to Tesseract.")
@@ -140,6 +154,7 @@ class OCREngine:
             "tessdata": str(get_tessdata_dir()),
             "active_engine": self.active_engine,
             "has_easyocr": easyocr is not None,
+            "has_paddleocr": PaddleOCR is not None,
         }
 
     def is_available(self):
@@ -328,6 +343,19 @@ class OCREngine:
                 cv_img = img
             results = self.easyocr_reader.readtext(cv_img, detail=0)
             return "\n".join(results)
+            
+        if self.active_engine == "paddleocr" and self.paddleocr_reader is not None:
+            if isinstance(img, Image.Image):
+                cv_img = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
+            else:
+                cv_img = img
+            results = self.paddleocr_reader.ocr(cv_img, cls=True)
+            if not results or not results[0]:
+                return ""
+            # PaddleOCR returns [[[box1], (text1, prob1)], ...]
+            lines = results[0] if isinstance(results[0][0], list) and isinstance(results[0][0][0], list) else results
+            text_results = [line[1][0] for line in lines if line and len(line) == 2 and isinstance(line[1], tuple)]
+            return "\n".join(text_results)
 
         if pytesseract is None:
             raise ImportError("pytesseract is not installed")
@@ -417,6 +445,38 @@ class OCREngine:
                         "w": int(x_max - x_min),
                         "h": int(y_max - y_min),
                         "conf": prob * 100,  # Convert to 0-100 scale like Tesseract
+                        "line_bottom": int(y_max)
+                    })
+            return results
+
+        if self.active_engine == "paddleocr" and self.paddleocr_reader is not None:
+            img = self._prepare_image(image, preprocess=False)
+            if isinstance(img, Image.Image):
+                cv_img = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
+            else:
+                cv_img = img
+
+            read_results = self.paddleocr_reader.ocr(cv_img, cls=True)
+            if not read_results or not read_results[0]:
+                return results
+                
+            lines = read_results[0] if isinstance(read_results[0][0], list) and isinstance(read_results[0][0][0], list) else read_results
+            for line in lines:
+                if not line or len(line) != 2: continue
+                bbox, (text, prob) = line
+                if search_lower in text.lower():
+                    x_coords = [p[0] for p in bbox]
+                    y_coords = [p[1] for p in bbox]
+                    x_min, x_max = min(x_coords), max(x_coords)
+                    y_min, y_max = min(y_coords), max(y_coords)
+                    
+                    results.append({
+                        "text": text,
+                        "x": int(x_min),
+                        "y": int(y_min),
+                        "w": int(x_max - x_min),
+                        "h": int(y_max - y_min),
+                        "conf": prob * 100,
                         "line_bottom": int(y_max)
                     })
             return results
@@ -614,6 +674,37 @@ class OCREngine:
             read_results = self.easyocr_reader.readtext(cv_img, detail=1, paragraph=True)
             result = []
             for i, (bbox, text, prob) in enumerate(read_results):
+                x_coords = [p[0] for p in bbox]
+                y_coords = [p[1] for p in bbox]
+                x_min, x_max = min(x_coords), max(x_coords)
+                y_min, y_max = min(y_coords), max(y_coords)
+                
+                result.append({
+                    "text": text,
+                    "x": int(x_min),
+                    "y": int(y_min),
+                    "w": int(x_max - x_min),
+                    "h": int(y_max - y_min),
+                    "block_num": i
+                })
+            return result
+
+        if self.active_engine == "paddleocr" and self.paddleocr_reader is not None:
+            img = self._prepare_image(image, preprocess=False)
+            if isinstance(img, Image.Image):
+                cv_img = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
+            else:
+                cv_img = img
+
+            read_results = self.paddleocr_reader.ocr(cv_img, cls=True)
+            result = []
+            if not read_results or not read_results[0]:
+                return result
+                
+            lines = read_results[0] if isinstance(read_results[0][0], list) and isinstance(read_results[0][0][0], list) else read_results
+            for i, line in enumerate(lines):
+                if not line or len(line) != 2: continue
+                bbox, (text, prob) = line
                 x_coords = [p[0] for p in bbox]
                 y_coords = [p[1] for p in bbox]
                 x_min, x_max = min(x_coords), max(x_coords)

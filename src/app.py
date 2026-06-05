@@ -3095,8 +3095,17 @@ class PDFEditorApp:
                        selectcolor=COLORS["bg_panel"], font=("Segoe UI", 10))
         rb_easy.pack(anchor=tk.W)
         
+        rb_paddle = tk.Radiobutton(top_frame, text="PaddleOCR (Dùng GPU, Yêu cầu tải thêm qua PIP)", 
+                       variable=engine_var, value="paddleocr", command=on_engine_change,
+                       bg=COLORS["bg_dark"], fg=COLORS["text_primary"], 
+                       selectcolor=COLORS["bg_panel"], font=("Segoe UI", 10))
+        rb_paddle.pack(anchor=tk.W)
+        
         if not info.get("has_easyocr"):
             rb_easy.configure(state=tk.DISABLED, text="EasyOCR (GPU) - CHƯA CÀI ĐẶT (Xem hướng dẫn bên dưới)")
+            
+        if not info.get("has_paddleocr"):
+            rb_paddle.configure(state=tk.DISABLED, text="PaddleOCR (GPU) - CHƯA CÀI ĐẶT (Xem hướng dẫn bên dưới)")
 
         # Scrollable text
         text = tk.Text(dialog, wrap=tk.WORD, font=("Consolas", 11),
@@ -3163,6 +3172,8 @@ Bước 3: Kiểm tra:
   python -c "from paddleocr import PaddleOCR; \\
     ocr = PaddleOCR(use_gpu=True, lang='vi'); \\
     print('PaddleOCR GPU OK!')"
+
+Bước 4: Tắt app và mở lại, chọn PaddleOCR.
 
   * Nhanh nhất trong 3 engine
   * Hỗ trợ tiếng Việt tốt
