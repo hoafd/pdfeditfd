@@ -155,9 +155,13 @@ class PDFEditorLauncher(tk.Tk):
             messagebox.showerror("Lỗi", "Không tìm thấy file run.bat")
             return
         # Launch run.bat and close launcher
-        subprocess.Popen("start run.bat", shell=True)
+        env = os.environ.copy()
+        env.pop('TCL_LIBRARY', None)
+        env.pop('TK_LIBRARY', None)
+        subprocess.Popen('start run.bat', shell=True, env=env)
         self.destroy()
 
 if __name__ == "__main__":
     app = PDFEditorLauncher()
     app.mainloop()
+
