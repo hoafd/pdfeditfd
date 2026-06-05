@@ -1329,8 +1329,10 @@ class PDFEditorApp:
     def _show_welcome(self):
         """Show welcome message on the canvas."""
         self.canvas.delete("all")
-        cw = self.canvas.winfo_width() or 800
-        ch = self.canvas.winfo_height() or 600
+        cw = self.canvas.winfo_width()
+        if cw < 10: cw = 800
+        ch = self.canvas.winfo_height()
+        if ch < 10: ch = 600
 
         self.canvas.create_text(
             cw // 2, ch // 2 - 40,

@@ -39,6 +39,7 @@ if errorlevel 1 (
     exit /b 1
 )
 pip install psutil >nul 2>&1
+pip install tkinterdnd2 >nul 2>&1
 echo       Python packages installed successfully.
 echo.
 

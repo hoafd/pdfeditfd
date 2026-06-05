@@ -89,7 +89,12 @@ def main():
     # Import and launch the app
     from src.app import PDFEditorApp
 
-    root = tk.Tk()
+    # Try to import tkinterdnd2 for Drag & Drop support
+    try:
+        from tkinterdnd2 import TkinterDnD
+        root = TkinterDnD.Tk()
+    except ImportError:
+        root = tk.Tk()
 
     # Set icon if available
     try:
