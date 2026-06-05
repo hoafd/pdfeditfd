@@ -158,10 +158,17 @@ class PDFEditorLauncher(tk.Tk):
         env = os.environ.copy()
         env.pop('TCL_LIBRARY', None)
         env.pop('TK_LIBRARY', None)
-        subprocess.Popen('start run.bat', shell=True, env=env)
+        project_dir = os.getcwd()
+        tess_path = os.path.join(project_dir, 'tools', 'Tesseract-OCR')
+        pop_path = os.path.join(project_dir, 'tools', 'poppler', 'Library', 'bin')
+        env['TESSDATA_PREFIX'] = os.path.join(tess_path, 'tessdata')
+        env['PATH'] = f"{tess_path};{pop_path};{env.get('PATH', '')}"
+        pythonw_exe = os.path.join(self.venv_path, 'Scripts', 'pythonw.exe')
+        subprocess.Popen([pythonw_exe, 'main.py'], env=env, creationflags=0x08000000)
         self.destroy()
 
 if __name__ == "__main__":
     app = PDFEditorLauncher()
     app.mainloop()
+
 
