@@ -3060,10 +3060,43 @@ class PDFEditorApp:
 
         dialog = tk.Toplevel(self.root)
         dialog.title("🔍 OCR Info & GPU Guide")
-        dialog.geometry("720x680")
+        dialog.geometry("720x720")
         dialog.configure(bg=COLORS["bg_dark"])
         dialog.transient(self.root)
         dialog.grab_set()
+
+        # Engine Selection UI
+        top_frame = tk.Frame(dialog, bg=COLORS["bg_dark"], pady=10)
+        top_frame.pack(fill=tk.X, padx=15)
+        
+        tk.Label(top_frame, text="Chọn OCR Engine (Hệ thống tự nhận diện cài đặt):", 
+                 bg=COLORS["bg_dark"], fg=COLORS["accent_light"], 
+                 font=("Segoe UI", 11, "bold")).pack(anchor=tk.W, pady=(0, 5))
+                 
+        engine_var = tk.StringVar(value=info.get("active_engine", "tesseract"))
+        
+        def on_engine_change():
+            try:
+                engine.set_engine(engine_var.get())
+                self._update_status(f"Đã chuyển sang {engine_var.get().upper()}")
+            except Exception as e:
+                messagebox.showerror("Lỗi", str(e))
+                engine_var.set("tesseract") # revert
+                
+        rb_tess = tk.Radiobutton(top_frame, text="Tesseract OCR (Mặc định, CPU/Tích hợp sẵn)", 
+                       variable=engine_var, value="tesseract", command=on_engine_change,
+                       bg=COLORS["bg_dark"], fg=COLORS["text_primary"], 
+                       selectcolor=COLORS["bg_panel"], font=("Segoe UI", 10))
+        rb_tess.pack(anchor=tk.W)
+        
+        rb_easy = tk.Radiobutton(top_frame, text="EasyOCR (Dùng GPU, Yêu cầu tải thêm qua PIP)", 
+                       variable=engine_var, value="easyocr", command=on_engine_change,
+                       bg=COLORS["bg_dark"], fg=COLORS["text_primary"], 
+                       selectcolor=COLORS["bg_panel"], font=("Segoe UI", 10))
+        rb_easy.pack(anchor=tk.W)
+        
+        if not info.get("has_easyocr"):
+            rb_easy.configure(state=tk.DISABLED, text="EasyOCR (GPU) - CHƯA CÀI ĐẶT (Xem hướng dẫn bên dưới)")
 
         # Scrollable text
         text = tk.Text(dialog, wrap=tk.WORD, font=("Consolas", 11),

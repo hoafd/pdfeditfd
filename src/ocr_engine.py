@@ -21,6 +21,11 @@ try:
 except ImportError:
     convert_from_path = None
 
+try:
+    import easyocr
+except ImportError:
+    easyocr = None
+
 from src.utils import (
     get_tesseract_path, get_tessdata_dir, get_poppler_path,
     get_temp_dir, get_tools_dir, logger
@@ -40,6 +45,25 @@ class OCREngine:
         self.default_dpi = 300
         self.default_lang = "eng+vie"
         self._check_language_packs()
+        
+        # Engine selection
+        self.active_engine = "tesseract"
+        self.easyocr_reader = None
+
+    def set_engine(self, engine_name):
+        """Switch OCR engine between 'tesseract' and 'easyocr'."""
+        if engine_name == "easyocr":
+            if easyocr is None:
+                raise ImportError("EasyOCR is not installed. Please install it first.")
+            if self.easyocr_reader is None:
+                logger.info("Initializing EasyOCR reader (this may take a moment)...")
+                # EasyOCR uses 'en' and 'vi' instead of 'eng' and 'vie'
+                self.easyocr_reader = easyocr.Reader(['vi', 'en'])
+            self.active_engine = "easyocr"
+            logger.info("OCR Engine switched to EasyOCR (GPU/CPU).")
+        else:
+            self.active_engine = "tesseract"
+            logger.info("OCR Engine switched to Tesseract.")
 
     def _configure_paths(self):
         """
@@ -114,6 +138,8 @@ class OCREngine:
             "path": str(get_tesseract_path()),
             "lang": self.default_lang,
             "tessdata": str(get_tessdata_dir()),
+            "active_engine": self.active_engine,
+            "has_easyocr": easyocr is not None,
         }
 
     def is_available(self):
@@ -292,12 +318,21 @@ class OCREngine:
         Returns:
             Recognized text string
         """
+        img = self._prepare_image(image, preprocess)
+
+        if self.active_engine == "easyocr" and self.easyocr_reader is not None:
+            # EasyOCR expects numpy array (OpenCV format)
+            if isinstance(img, Image.Image):
+                cv_img = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
+            else:
+                cv_img = img
+            results = self.easyocr_reader.readtext(cv_img, detail=0)
+            return "\n".join(results)
+
         if pytesseract is None:
             raise ImportError("pytesseract is not installed")
 
         lang = lang or self.default_lang
-        img = self._prepare_image(image, preprocess)
-
         return pytesseract.image_to_string(img, lang=lang)
 
     def image_to_data(self, image, lang=None, preprocess=True):
@@ -356,10 +391,39 @@ class OCREngine:
             List of dicts with keys: text, x, y, w, h, conf, line_bottom
             where line_bottom is the Y coordinate of the bottom of the text line
         """
-        data = self.image_to_data(image, lang=lang, preprocess=True)
-        results = []
         search_lower = search_text.lower()
+        results = []
 
+        if self.active_engine == "easyocr" and self.easyocr_reader is not None:
+            img = self._prepare_image(image, preprocess=False)
+            if isinstance(img, Image.Image):
+                cv_img = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
+            else:
+                cv_img = img
+
+            read_results = self.easyocr_reader.readtext(cv_img, detail=1)
+            for bbox, text, prob in read_results:
+                if search_lower in text.lower():
+                    # bbox format: [[x1, y1], [x2, y1], [x2, y2], [x1, y2]]
+                    x_coords = [p[0] for p in bbox]
+                    y_coords = [p[1] for p in bbox]
+                    x_min, x_max = min(x_coords), max(x_coords)
+                    y_min, y_max = min(y_coords), max(y_coords)
+                    
+                    results.append({
+                        "text": text,
+                        "x": int(x_min),
+                        "y": int(y_min),
+                        "w": int(x_max - x_min),
+                        "h": int(y_max - y_min),
+                        "conf": prob * 100,  # Convert to 0-100 scale like Tesseract
+                        "line_bottom": int(y_max)
+                    })
+            return results
+
+        # Tesseract fallback
+        data = self.image_to_data(image, lang=lang, preprocess=True)
+        
         n_boxes = len(data["text"])
 
         # First, try to find the text as a whole phrase across consecutive words
@@ -539,6 +603,32 @@ class OCREngine:
         Returns:
             List of dicts with keys: text, x, y, w, h, block_num
         """
+        if self.active_engine == "easyocr" and self.easyocr_reader is not None:
+            img = self._prepare_image(image, preprocess=False)
+            if isinstance(img, Image.Image):
+                cv_img = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
+            else:
+                cv_img = img
+
+            # detail=1 returns [(bbox, text, prob)]
+            read_results = self.easyocr_reader.readtext(cv_img, detail=1, paragraph=True)
+            result = []
+            for i, (bbox, text, prob) in enumerate(read_results):
+                x_coords = [p[0] for p in bbox]
+                y_coords = [p[1] for p in bbox]
+                x_min, x_max = min(x_coords), max(x_coords)
+                y_min, y_max = min(y_coords), max(y_coords)
+                
+                result.append({
+                    "text": text,
+                    "x": int(x_min),
+                    "y": int(y_min),
+                    "w": int(x_max - x_min),
+                    "h": int(y_max - y_min),
+                    "block_num": i
+                })
+            return result
+
         data = self.image_to_data(image, lang=lang, preprocess=False)
         blocks = {}
 
