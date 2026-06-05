@@ -13,4 +13,5 @@ echo.
 echo HOAN THANH!
 echo File chay Launcher nam trong thu muc: dist\PDF_Editor_Launcher.exe
 echo Hay copy file nay ra thu muc goc (ngang hang voi src, venv)
-pause
+
+
