@@ -3152,7 +3152,7 @@ class PDFEditorApp:
         rb_paddle.pack(side=tk.LEFT)
         
         def install_paddleocr():
-            cmd = f'start cmd /k ""{sys.executable}" -m pip install paddlepaddle-gpu -i https://pypi.tuna.tsinghua.edu.cn/simple && "{sys.executable}" -m pip install paddleocr>=2.0.1 && echo. && echo HOAN THANH! Ban hay tat cua so nay, roi tat app mo lai de su dung PaddleOCR. && pause"'
+            cmd = f'start cmd /k ""{sys.executable}" -m pip install paddlepaddle-gpu && "{sys.executable}" -m pip install paddleocr>=2.0.1 && echo. && echo HOAN THANH! Ban hay tat cua so nay, roi tat app mo lai de su dung PaddleOCR. && pause"'
             subprocess.Popen(cmd, shell=True)
             
         if not info.get("has_paddleocr"):
