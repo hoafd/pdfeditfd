@@ -68,7 +68,14 @@ Một ứng dụng chỉnh sửa PDF ngoại tuyến (Offline) mạnh mẽ và b
 - **Tăng tốc OCR bằng GPU:** OCR mặc định chạy trên CPU. Nếu máy có card màn hình NVIDIA, hãy vào `Trợ giúp -> OCR Info & GPU` để xem cách cài thêm EasyOCR giúp tăng tốc 10x.
 - **Đánh số trang:** Tự động chèn số (VD: Trang 1/10) vào góc dưới.
 
-### 6. Bảo mật và Tối ưu (Security)
+### 6. Xử lý Hàng loạt (Batch Operations)
+Menu `Hàng loạt` cung cấp sức mạnh để xử lý hàng chục, hàng trăm trang cùng một lúc. Bạn có thể nhập dải trang mong muốn (VD: `1-5, 8, 11-15`) để:
+- **Xoay / Xóa / Trích xuất hàng loạt:** Quản lý hàng loạt trang trong chớp mắt.
+- **Xuất ảnh hàng loạt:** Chuyển đổi một dải trang cụ thể thành file hình ảnh (PNG/JPG).
+- **Tách hàng loạt theo tỷ lệ %:** Cắt đôi hoặc cắt theo tỷ lệ % cụ thể trên nhiều trang cùng lúc. Rất hữu ích khi cần chia đôi tài liệu A3 thành A4 đồng loạt.
+- **OCR Tách hàng loạt & Cắt đoạn chữ:** Chạy công cụ tách thông minh (dựa trên chữ viết) xuyên suốt nhiều trang đã định sẵn.
+
+### 7. Bảo mật và Tối ưu (Security)
 - **Mã hóa (Encrypt):** Đặt mật khẩu AES-256 bảo vệ tuyệt đối.
 - **Gỡ mật khẩu (Decrypt):** Mở khóa PDF.
 - **Nén (Compress):** Giảm dung lượng file scan lớn để gửi mail.

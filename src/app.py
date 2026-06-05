@@ -2932,7 +2932,16 @@ class PDFEditorApp:
             ("- Máy sẽ đọc ảnh và tạo ra một file PDF mới có chứa lớp chữ ẩn bên dưới. Bạn có thể bôi đen, copy và tìm kiếm chữ bình thường!\n", ""),
             ("Lưu ý: OCR khá tốn thời gian tùy độ dài file. Hãy xem mục 'Trợ giúp -> OCR Info & GPU' để tăng tốc bằng card đồ họa.\n\n", ""),
             
-            ("6. BẢO MẬT & TỐI ƯU\n", "h1"),
+            ("6. XỬ LÝ HÀNG LOẠT (BATCH OPERATIONS)\n", "h1"),
+            ("Menu 'Hàng loạt' (Batch) giúp bạn xử lý nhiều trang cùng lúc với hộp thoại chọn dải trang (Page Range) tiện lợi (VD: 1-5, 8, 11-15):\n", ""),
+            ("• Xoay hàng loạt: ", "bold"), ("Xoay cùng lúc nhiều trang theo góc chỉ định (90, 180, 270).\n", ""),
+            ("• Xóa hàng loạt: ", "bold"), ("Xóa nhanh các dải trang không cần thiết.\n", ""),
+            ("• Trích xuất hàng loạt (Extract): ", "bold"), ("Lưu các dải trang được chọn thành một tệp PDF mới.\n", ""),
+            ("• Xuất ảnh hàng loạt (Export Images): ", "bold"), ("Chuyển đổi các trang đã chọn thành các tệp hình ảnh (PNG/JPG).\n", ""),
+            ("• Tách hàng loạt theo tỷ lệ %: ", "bold"), ("Cắt đôi (hoặc cắt theo tỷ lệ bất kỳ) cho hàng loạt trang cùng một lúc.\n", ""),
+            ("• OCR Tách hàng loạt & Cắt đoạn chữ: ", "bold"), ("Áp dụng chức năng tách/cắt thông minh dựa trên AI quét chữ (OCR) cho một nhóm trang được chọn.\n\n", ""),
+            
+            ("7. BẢO MẬT & TỐI ƯU\n", "h1"),
             ("• Đặt mật khẩu: ", "bold"), ("Vào menu Bảo mật -> Mã hóa. Chuẩn mã hóa AES-256 an toàn nhất hiện nay.\n", ""),
             ("• Nén file: ", "bold"), ("Giảm dung lượng file PDF nặng (nhất là file scan) để dễ dàng gửi email.\n\n", ""),
             
