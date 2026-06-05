@@ -5,6 +5,17 @@ setlocal
 set "PROJECT_DIR=%~dp0"
 cd /d "%PROJECT_DIR%"
 
+REM Check if Python is installed
+python --version >nul 2>&1
+if errorlevel 1 (
+    echo ============================================================
+    echo   Python is not installed or not in PATH!
+    echo   Please run 'setup.bat' first to install Python automatically.
+    echo ============================================================
+    pause
+    exit /b 1
+)
+
 REM Check if venv exists
 if not exist "venv\Scripts\activate.bat" (
     echo ============================================================

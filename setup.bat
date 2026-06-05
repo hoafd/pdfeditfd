@@ -11,13 +11,39 @@ echo.
 set "PROJECT_DIR=%~dp0"
 cd /d "%PROJECT_DIR%"
 
-REM ========== 1. Create Python Virtual Environment ==========
-echo [1/5] Creating Python virtual environment...
+REM ========== 1. Check & Install Python ==========
+echo [1/6] Checking Python installation...
+python --version >nul 2>&1
+if errorlevel 1 (
+    echo       Python is not installed or not in PATH!
+    echo       Downloading Python 3.11...
+    powershell -Command "& {$ProgressPreference='SilentlyContinue'; try { Invoke-WebRequest -Uri 'https://www.python.org/ftp/python/3.11.9/python-3.11.9-amd64.exe' -OutFile 'python_setup.exe' -UseBasicParsing } catch { Write-Host 'Download failed.' }}"
+    if exist "python_setup.exe" (
+        echo       Installing Python silently...
+        start /wait python_setup.exe /quiet InstallAllUsers=0 PrependPath=1 Include_test=0
+        del python_setup.exe
+        echo ============================================================
+        echo   Python has been installed.
+        echo   Please CLOSE this window and run 'setup.bat' again!
+        echo ============================================================
+        pause
+        exit /b 1
+    ) else (
+        echo ERROR: Failed to download Python. Please install it manually.
+        pause
+        exit /b 1
+    )
+) else (
+    echo       Python is installed. OK.
+)
+echo.
+
+REM ========== 2. Create Python Virtual Environment ==========
+echo [2/6] Creating Python virtual environment...
 if not exist "venv" (
     python -m venv venv
     if errorlevel 1 (
         echo ERROR: Failed to create virtual environment.
-        echo        Make sure Python 3.10+ is installed and in PATH.
         pause
         exit /b 1
     )
@@ -28,7 +54,7 @@ if not exist "venv" (
 echo.
 
 REM ========== 2. Activate venv and install packages ==========
-echo [2/5] Installing Python packages...
+echo [2/6] Installing Python packages...
 call venv\Scripts\activate.bat
 
 python -m pip install --upgrade pip >nul 2>&1
@@ -44,7 +70,7 @@ echo       Python packages installed successfully.
 echo.
 
 REM ========== 3. Tesseract OCR ==========
-echo [3/5] Setting up Tesseract OCR...
+echo [3/6] Setting up Tesseract OCR...
 mkdir "tools\Tesseract-OCR" 2>nul
 
 REM Check if system Tesseract exists
@@ -92,7 +118,7 @@ if defined SYSTEM_TESS (
 echo.
 
 REM ========== 4. Vietnamese language data ==========
-echo [4/5] Setting up OCR language data...
+echo [4/6] Setting up OCR language data...
 
 REM Determine tessdata directory
 set "TESSDATA_DIR="
@@ -135,7 +161,7 @@ if exist "!TESSDATA_DIR!\eng.traineddata" (
 echo.
 
 REM ========== 5. Poppler ==========
-echo [5/5] Setting up Poppler...
+echo [5/6] Setting up Poppler...
 if exist "tools\poppler\Library\bin\pdftoppm.exe" (
     echo       Poppler already installed. Skipping.
 ) else (

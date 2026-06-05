@@ -63,8 +63,9 @@ class OCREngine:
                 raise ImportError("EasyOCR is not installed. Please install it first.")
             if self.easyocr_reader is None:
                 logger.info("Initializing EasyOCR reader (this may take a moment)...")
-                # EasyOCR uses 'en' and 'vi' instead of 'eng' and 'vie'
-                self.easyocr_reader = easyocr.Reader(['vi', 'en'])
+                # Default init with current lang, easyocr lang format handled in set_language
+                langs = self._get_easyocr_langs(self.default_lang)
+                self.easyocr_reader = easyocr.Reader(langs)
             self.active_engine = "easyocr"
             logger.info("OCR Engine switched to EasyOCR (GPU/CPU).")
         elif engine_name == "paddleocr":
@@ -72,12 +73,40 @@ class OCREngine:
                 raise ImportError("PaddleOCR is not installed. Please install it first.")
             if self.paddleocr_reader is None:
                 logger.info("Initializing PaddleOCR reader (this may take a moment)...")
-                self.paddleocr_reader = PaddleOCR(use_angle_cls=True, lang='vi')
+                p_lang = self._get_paddleocr_lang(self.default_lang)
+                self.paddleocr_reader = PaddleOCR(use_angle_cls=True, lang=p_lang)
             self.active_engine = "paddleocr"
             logger.info("OCR Engine switched to PaddleOCR (GPU/CPU).")
         else:
             self.active_engine = "tesseract"
             logger.info("OCR Engine switched to Tesseract.")
+
+    def _get_easyocr_langs(self, lang_code):
+        if "vie" in lang_code and "eng" in lang_code: return ['vi', 'en']
+        if "vie" in lang_code: return ['vi']
+        if "eng" in lang_code: return ['en']
+        return ['vi', 'en']
+
+    def _get_paddleocr_lang(self, lang_code):
+        if "vie" in lang_code: return 'vi'
+        if "eng" in lang_code: return 'en'
+        return 'vi'
+
+    def set_language(self, lang_code):
+        """Change OCR language and reload engines if necessary. 
+        lang_code format: 'vie', 'eng', or 'vie+eng'"""
+        self.default_lang = lang_code
+        logger.info(f"Language set to {lang_code}")
+        
+        # Reload EasyOCR if active or initialized
+        if self.easyocr_reader is not None:
+            logger.info("Reloading EasyOCR with new language...")
+            self.easyocr_reader = easyocr.Reader(self._get_easyocr_langs(lang_code))
+            
+        # Reload PaddleOCR if active or initialized
+        if self.paddleocr_reader is not None:
+            logger.info("Reloading PaddleOCR with new language...")
+            self.paddleocr_reader = PaddleOCR(use_angle_cls=True, lang=self._get_paddleocr_lang(lang_code))
 
     def _configure_paths(self):
         """

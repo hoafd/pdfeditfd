@@ -3069,6 +3069,41 @@ class PDFEditorApp:
         top_frame = tk.Frame(dialog, bg=COLORS["bg_dark"], pady=10)
         top_frame.pack(fill=tk.X, padx=15)
         
+        import sys
+        import subprocess
+        import threading
+
+        # Language Selection UI
+        lang_frame = tk.Frame(top_frame, bg=COLORS["bg_dark"])
+        lang_frame.pack(fill=tk.X, pady=(0, 10))
+        tk.Label(lang_frame, text="Ngôn ngữ OCR:", bg=COLORS["bg_dark"], fg=COLORS["text_primary"], font=("Segoe UI", 10, "bold")).pack(side=tk.LEFT)
+        
+        lang_var = tk.StringVar()
+        current_lang = info.get("lang", "vie+eng")
+        if "vie" in current_lang and "eng" in current_lang:
+            lang_var.set("Tiếng Việt + Tiếng Anh")
+        elif "vie" in current_lang:
+            lang_var.set("Tiếng Việt")
+        else:
+            lang_var.set("Tiếng Anh")
+            
+        lang_combo = ttk.Combobox(lang_frame, textvariable=lang_var, values=["Tiếng Việt", "Tiếng Anh", "Tiếng Việt + Tiếng Anh"], state="readonly", width=25)
+        lang_combo.pack(side=tk.LEFT, padx=10)
+        
+        def on_lang_change(event=None):
+            val = lang_var.get()
+            lang_code = "vie+eng"
+            if val == "Tiếng Việt": lang_code = "vie"
+            elif val == "Tiếng Anh": lang_code = "eng"
+            
+            try:
+                engine.set_language(lang_code)
+                self._update_status(f"Đã đổi ngôn ngữ OCR thành {val}")
+            except Exception as e:
+                messagebox.showerror("Lỗi", str(e))
+                
+        lang_combo.bind("<<ComboboxSelected>>", on_lang_change)
+
         tk.Label(top_frame, text="Chọn OCR Engine (Hệ thống tự nhận diện cài đặt):", 
                  bg=COLORS["bg_dark"], fg=COLORS["accent_light"], 
                  font=("Segoe UI", 11, "bold")).pack(anchor=tk.W, pady=(0, 5))
@@ -3089,23 +3124,41 @@ class PDFEditorApp:
                        selectcolor=COLORS["bg_panel"], font=("Segoe UI", 10))
         rb_tess.pack(anchor=tk.W)
         
-        rb_easy = tk.Radiobutton(top_frame, text="EasyOCR (Dùng GPU, Yêu cầu tải thêm qua PIP)", 
+        # EasyOCR
+        easy_frame = tk.Frame(top_frame, bg=COLORS["bg_dark"])
+        easy_frame.pack(fill=tk.X, anchor=tk.W)
+        rb_easy = tk.Radiobutton(easy_frame, text="EasyOCR (Dùng GPU, Yêu cầu tải thêm qua PIP)", 
                        variable=engine_var, value="easyocr", command=on_engine_change,
                        bg=COLORS["bg_dark"], fg=COLORS["text_primary"], 
                        selectcolor=COLORS["bg_panel"], font=("Segoe UI", 10))
-        rb_easy.pack(anchor=tk.W)
+        rb_easy.pack(side=tk.LEFT)
         
-        rb_paddle = tk.Radiobutton(top_frame, text="PaddleOCR (Dùng GPU, Yêu cầu tải thêm qua PIP)", 
+        def install_easyocr():
+            cmd = f'start cmd /k ""{sys.executable}" -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121 && "{sys.executable}" -m pip install easyocr && echo. && echo HOAN THANH! Ban hay tat cua so nay, roi tat app mo lai de su dung EasyOCR. && pause"'
+            subprocess.Popen(cmd, shell=True)
+            
+        if not info.get("has_easyocr"):
+            rb_easy.configure(state=tk.DISABLED, text="EasyOCR (GPU) - CHƯA CÀI ĐẶT")
+            tk.Button(easy_frame, text="Tự động cài đặt (Cần Internet)", command=install_easyocr, 
+                      bg=COLORS["primary"], fg="white", font=("Segoe UI", 9), relief=tk.FLAT, padx=10).pack(side=tk.LEFT, padx=10)
+        
+        # PaddleOCR
+        paddle_frame = tk.Frame(top_frame, bg=COLORS["bg_dark"])
+        paddle_frame.pack(fill=tk.X, anchor=tk.W)
+        rb_paddle = tk.Radiobutton(paddle_frame, text="PaddleOCR (Dùng GPU, Yêu cầu tải thêm qua PIP)", 
                        variable=engine_var, value="paddleocr", command=on_engine_change,
                        bg=COLORS["bg_dark"], fg=COLORS["text_primary"], 
                        selectcolor=COLORS["bg_panel"], font=("Segoe UI", 10))
-        rb_paddle.pack(anchor=tk.W)
+        rb_paddle.pack(side=tk.LEFT)
         
-        if not info.get("has_easyocr"):
-            rb_easy.configure(state=tk.DISABLED, text="EasyOCR (GPU) - CHƯA CÀI ĐẶT (Xem hướng dẫn bên dưới)")
+        def install_paddleocr():
+            cmd = f'start cmd /k ""{sys.executable}" -m pip install paddlepaddle-gpu -i https://pypi.tuna.tsinghua.edu.cn/simple && "{sys.executable}" -m pip install paddleocr>=2.0.1 && echo. && echo HOAN THANH! Ban hay tat cua so nay, roi tat app mo lai de su dung PaddleOCR. && pause"'
+            subprocess.Popen(cmd, shell=True)
             
         if not info.get("has_paddleocr"):
-            rb_paddle.configure(state=tk.DISABLED, text="PaddleOCR (GPU) - CHƯA CÀI ĐẶT (Xem hướng dẫn bên dưới)")
+            rb_paddle.configure(state=tk.DISABLED, text="PaddleOCR (GPU) - CHƯA CÀI ĐẶT")
+            tk.Button(paddle_frame, text="Tự động cài đặt (Cần Internet)", command=install_paddleocr, 
+                      bg=COLORS["primary"], fg="white", font=("Segoe UI", 9), relief=tk.FLAT, padx=10).pack(side=tk.LEFT, padx=10)
 
         # Scrollable text
         text = tk.Text(dialog, wrap=tk.WORD, font=("Consolas", 11),
