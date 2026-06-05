@@ -3140,7 +3140,7 @@ class PDFEditorApp:
         if not info.get("has_easyocr"):
             rb_easy.configure(state=tk.DISABLED, text="EasyOCR (GPU) - CHƯA CÀI ĐẶT")
             tk.Button(easy_frame, text="Tự động cài đặt (Cần Internet)", command=install_easyocr, 
-                      bg=COLORS["primary"], fg="white", font=("Segoe UI", 9), relief=tk.FLAT, padx=10).pack(side=tk.LEFT, padx=10)
+                      bg=COLORS["accent"], fg="white", font=("Segoe UI", 9), relief=tk.FLAT, padx=10).pack(side=tk.LEFT, padx=10)
         
         # PaddleOCR
         paddle_frame = tk.Frame(top_frame, bg=COLORS["bg_dark"])
@@ -3158,7 +3158,7 @@ class PDFEditorApp:
         if not info.get("has_paddleocr"):
             rb_paddle.configure(state=tk.DISABLED, text="PaddleOCR (GPU) - CHƯA CÀI ĐẶT")
             tk.Button(paddle_frame, text="Tự động cài đặt (Cần Internet)", command=install_paddleocr, 
-                      bg=COLORS["primary"], fg="white", font=("Segoe UI", 9), relief=tk.FLAT, padx=10).pack(side=tk.LEFT, padx=10)
+                      bg=COLORS["accent"], fg="white", font=("Segoe UI", 9), relief=tk.FLAT, padx=10).pack(side=tk.LEFT, padx=10)
 
         # Scrollable text
         text = tk.Text(dialog, wrap=tk.WORD, font=("Consolas", 11),
