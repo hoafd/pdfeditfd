@@ -457,6 +457,8 @@ class PDFEditorApp:
         help_menu.add_command(label=t("help_shortcuts"),
                               command=self.show_shortcuts)
         help_menu.add_separator()
+        help_menu.add_command(label="📖 Hướng dẫn sử dụng",
+                              command=self.show_user_manual)
         help_menu.add_command(label="🔍 OCR Info & GPU",
                               command=self.show_ocr_info)
         menubar.add_cascade(label=t("menu_help"), menu=help_menu)
@@ -2861,6 +2863,103 @@ class PDFEditorApp:
         )
 
     # ─── Help ────────────────────────────────────────────────────────────
+
+    def show_user_manual(self):
+        """Show detailed user manual dialog."""
+        dialog = tk.Toplevel(self.root)
+        dialog.title("📖 Hướng dẫn sử dụng PDF Editor Pro")
+        dialog.geometry("850x700")
+        dialog.configure(bg=COLORS["bg_dark"])
+        dialog.transient(self.root)
+        
+        # Header
+        header = tk.Frame(dialog, bg=COLORS["accent"], height=60)
+        header.pack(fill=tk.X)
+        header.pack_propagate(False)
+        tk.Label(header, text="📖 HƯỚNG DẪN SỬ DỤNG", font=("Segoe UI", 16, "bold"),
+                 bg=COLORS["accent"], fg="white").pack(side=tk.LEFT, padx=20, pady=15)
+                 
+        # Scrollable Text Area
+        text_frame = tk.Frame(dialog, bg=COLORS["bg_dark"])
+        text_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+        
+        text = tk.Text(text_frame, wrap=tk.WORD, font=("Segoe UI", 11),
+                       bg=COLORS["bg_card"], fg=COLORS["text_primary"],
+                       padx=20, pady=20, relief=tk.FLAT,
+                       insertbackground=COLORS["text_primary"],
+                       spacing1=5, spacing2=2, spacing3=5)
+        scrollbar = tk.Scrollbar(text_frame, command=text.yview)
+        text.configure(yscrollcommand=scrollbar.set)
+        
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        
+        # Tags for formatting
+        text.tag_configure("h1", font=("Segoe UI", 14, "bold"), foreground=COLORS["accent"], spacing1=15, spacing3=10)
+        text.tag_configure("h2", font=("Segoe UI", 12, "bold"), foreground="#E2E8F0", spacing1=10, spacing3=5)
+        text.tag_configure("bold", font=("Segoe UI", 11, "bold"))
+        text.tag_configure("code", font=("Consolas", 10), background="#1E293B", foreground="#38BDF8")
+        
+        content = [
+            ("Chào mừng bạn đến với PDF Editor Pro!\n", "h1"),
+            ("Đây là phần mềm chỉnh sửa PDF ngoại tuyến mạnh mẽ, bảo mật, xử lý mọi thứ hoàn toàn trên máy tính của bạn.\n\n", ""),
+            
+            ("1. CÁC THAO TÁC CƠ BẢN\n", "h1"),
+            ("Mở file: ", "bold"), ("Nhấn Ctrl+O hoặc dùng nút 'Mở PDF'. Bạn cũng có thể mở danh sách file gần đây.\n", ""),
+            ("Cuộn trang: ", "bold"), ("Sử dụng con lăn chuột. Phần mềm hỗ trợ cuộn liên tục (Continuous) hoặc xem từng trang (Single Page).\n", ""),
+            ("Lưu file: ", "bold"), ("Sau khi chỉnh sửa, nhấn 'Lưu' (Ctrl+S) để lưu đè, hoặc 'Lưu thành' để tạo bản sao. Các file lưu tự động mặc định nằm trong thư mục 'Tài liệu' (Documents) của bạn.\n\n", ""),
+            
+            ("2. CÔNG CỤ TÁCH TRANG (SPLIT)\n", "h1"),
+            ("Phần mềm cung cấp 3 công cụ tách trang độc đáo:\n", ""),
+            ("• Tách theo tọa độ Y: ", "bold"), ("Rất hữu ích khi bạn muốn cắt bỏ phần viền thừa (ví dụ: mép dưới của file scan). Bạn điền số (ví dụ 100) để cắt 100 pixel tính từ trên xuống.\n", ""),
+            ("• Tách theo chữ (OCR): ", "bold"), ("Phần mềm tự động đọc chữ trên trang và chia trang mỗi khi gặp một từ khóa bạn chỉ định (vd: 'Chương 1', 'Mục lục').\n", ""),
+            ("• Tách tự động (Khoảng trắng): ", "bold"), ("Máy tự động tìm các dải giấy trắng nằm ngang (như khoảng cách giữa các khổ thơ, hình ảnh) để cắt mà không cắt ngang chữ.\n\n", ""),
+            
+            ("3. CHỈNH SỬA & GỘP FILE\n", "h1"),
+            ("• Gộp nhiều file: ", "bold"), ("Vào 'Tệp -> Gộp PDF', chọn nhiều file PDF. Kéo thả để sắp xếp thứ tự và nhấn Gộp. File mới sẽ tự mở ra.\n", ""),
+            ("• Xoay trang: ", "bold"), ("Trên thanh công cụ, nhấn 'Xoay trái/phải' trang hiện tại.\n", ""),
+            ("• Chèn trang trống: ", "bold"), ("Bạn có thể thêm trang trắng vào trước/sau trang đang xem để ghi chú.\n\n", ""),
+            
+            ("4. THÊM NỘI DUNG (CHỮ, ẢNH, DẤU THỦY TRYỀN)\n", "h1"),
+            ("• Chữ & Ảnh: ", "bold"), ("Vào menu Công cụ -> Thêm Chữ / Thêm Ảnh. Nhập nội dung, chọn màu, kích thước và TỌA ĐỘ (X, Y) để đặt vào trang.\n", ""),
+            ("• Dấu thủy ấn (Watermark): ", "bold"), ("Bảo vệ bản quyền bằng cách chèn dòng chữ mờ chéo qua các trang.\n", ""),
+            ("• Số trang: ", "bold"), ("Tự động đánh số thứ tự cho toàn bộ tài liệu (vd: Trang 1/10) ở góc dưới.\n\n", ""),
+            
+            ("5. NHẬN DẠNG CHỮ TỪ ẢNH (OCR)\n", "h1"),
+            ("Nếu file PDF của bạn là ảnh chụp (không bôi đen được chữ), hãy dùng công cụ OCR:\n", ""),
+            ("- Vào Công cụ -> Nhận dạng chữ (OCR).\n", ""),
+            ("- Chọn ngôn ngữ (Tiếng Việt/Tiếng Anh).\n", ""),
+            ("- Máy sẽ đọc ảnh và tạo ra một file PDF mới có chứa lớp chữ ẩn bên dưới. Bạn có thể bôi đen, copy và tìm kiếm chữ bình thường!\n", ""),
+            ("Lưu ý: OCR khá tốn thời gian tùy độ dài file. Hãy xem mục 'Trợ giúp -> OCR Info & GPU' để tăng tốc bằng card đồ họa.\n\n", ""),
+            
+            ("6. BẢO MẬT & TỐI ƯU\n", "h1"),
+            ("• Đặt mật khẩu: ", "bold"), ("Vào menu Bảo mật -> Mã hóa. Chuẩn mã hóa AES-256 an toàn nhất hiện nay.\n", ""),
+            ("• Nén file: ", "bold"), ("Giảm dung lượng file PDF nặng (nhất là file scan) để dễ dàng gửi email.\n\n", ""),
+            
+            ("7. GIẢI QUYẾT LỖI THƯỜNG GẶP\n", "h1"),
+            ("1. Mở app không lên / Thiếu thư viện: ", "bold"), ("Đảm bảo bạn đã chạy file ", ""), ("setup.bat", "code"), (" trước khi chạy file ", ""), ("run.bat", "code"), (" lần đầu.\n", ""),
+            ("2. Báo lỗi Poppler khi làm OCR: ", "bold"), ("Máy cần thư viện Poppler. Lỗi này thường do setup bị lỗi mạng, hãy chạy lại setup.bat.\n", ""),
+            ("3. App chạy chậm/Giật khi cuộn: ", "bold"), ("Việc render PDF độ phân giải cao tốn CPU. Hệ thống đã tối đa hóa bằng cách tự động dùng RAM để cache. Nếu RAM bạn trống nhiều, app sẽ load trước nhiều trang để cuộn mượt hơn.\n\n", ""),
+            
+            ("Mọi dữ liệu của bạn đều xử lý OFFLINE, không bao giờ gửi lên Internet.", "h2")
+        ]
+        
+        text.config(state=tk.NORMAL)
+        text.delete("1.0", tk.END)
+        for t, tag in content:
+            if tag:
+                text.insert(tk.END, t, tag)
+            else:
+                text.insert(tk.END, t)
+        text.config(state=tk.DISABLED)
+        
+        # Close button
+        btn = tk.Button(dialog, text="Đóng Hướng Dẫn", font=("Segoe UI", 11, "bold"),
+                        bg=COLORS["bg_panel"], fg="white",
+                        activebackground=COLORS["accent"],
+                        relief=tk.FLAT, padx=25, pady=8,
+                        command=dialog.destroy)
+        btn.pack(pady=(0, 20))
 
     def show_ocr_info(self):
         """Show OCR engine info and GPU upgrade guide."""

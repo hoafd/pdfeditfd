@@ -33,52 +33,46 @@ Một ứng dụng chỉnh sửa PDF ngoại tuyến (Offline) mạnh mẽ và b
 
 ---
 
-## 🚀 Hướng dẫn Sử dụng Chi tiết
+## 🚀 Hướng dẫn Sử dụng Siêu Chi tiết
 
-### 1. Cài đặt và Khởi động
-- Đảm bảo máy tính đã cài đặt [Tesseract OCR](https://github.com/tesseract-ocr/tesseract) và [Poppler](https://poppler.freedesktop.org/) (ứng dụng đã tích hợp sẵn trong thư mục `tools`).
-- Chạy file `./run.bat` để mở ứng dụng. Máy tính sẽ tự động nhận diện dung lượng RAM trống để cấp phát bộ nhớ đệm giúp thao tác cuộn mượt mà nhất.
+### 1. Cài đặt và Khởi động lần đầu
+- Để phần mềm hoạt động Offline 100%, hãy chạy file `setup.bat` trước. File này sẽ tự động thiết lập môi trường, phát hiện thư viện Tesseract (OCR) sẵn có trên máy hoặc tự tải về bản nội bộ, đồng thời tải bộ ngôn ngữ Tiếng Việt và thư viện Poppler.
+- Chạy file `run.bat` để mở ứng dụng. Máy tính sẽ tự động nhận diện dung lượng RAM để cấp phát bộ nhớ đệm giúp thao tác cuộn cực kỳ mượt mà.
 
 ### 2. Các Thao tác Cơ bản
-- **Mở file:** Nhấn nút `Mở PDF` (biểu tượng thư mục) hoặc kéo thả trực tiếp (Drag & Drop) một file PDF vào màn hình chính. Ứng dụng mặc định mở ở **Chế độ xem (Chỉ đọc)** để tránh sai sót.
-- **Chế độ hiển thị:** 
-  - 📜 **Cuộn liên tục:** Phù hợp để đọc nhanh toàn bộ tài liệu. (Hiển thị số thứ tự trang X/Y ở góc để dễ theo dõi).
-  - 📄 **Trang đơn:** Chỉ hiển thị 1 trang, phù hợp để chỉnh sửa hoặc cắt tọa độ chính xác.
-- **Phóng to/Thu nhỏ:** Sử dụng các nút kính lúp `+` / `-` hoặc nhập mức thu phóng mong muốn.
+- **Mở file:** Nhấn nút `Mở PDF` (Ctrl+O) hoặc kéo thả trực tiếp một file PDF vào màn hình chính. Ứng dụng luôn mở ở **Chế độ xem (Chỉ đọc)** để tránh rủi ro thay đổi nhầm.
+- **Cuộn trang:** 
+  - 📜 **Cuộn liên tục (Continuous):** Hiển thị các trang nối tiếp nhau, dễ dàng đọc toàn bộ tài liệu bằng con lăn chuột.
+  - 📄 **Trang đơn (Single Page):** Chỉ hiển thị 1 trang để chỉnh sửa hoặc cắt tọa độ chính xác.
+- **Phóng to/Thu nhỏ:** Sử dụng các nút kính lúp `+` / `-`.
+- **Lưu file:** Nhấn `Lưu` (Ctrl+S) để ghi đè, hoặc `Lưu thành` để tạo bản sao. Các file lưu tự động mặc định nằm trong thư mục **Tài liệu (Documents)** của bạn trên Windows.
 
 ### 3. Quản lý Trang (Xóa, Xoay, Trích xuất, Chèn trang)
-- **Chọn trang:** Ở cột Thu nhỏ (Thumbnails) bên trái, bạn có thể click vào các ô vuông để chọn trang cần thao tác. Có thể dùng nút "Tất cả", "Chẵn", "Lẻ" để chọn nhanh.
-- **Thực hiện lệnh:** Sau khi chọn trang, nhấp chuột phải vào cột Thumbnail hoặc chọn từ menu `Chỉnh sửa` phía trên để:
+- Ở cột Thu nhỏ (Thumbnails) bên trái, đánh dấu tick vào các trang bạn muốn thao tác (Dùng nút Chọn "Tất cả", "Chẵn", "Lẻ").
+- Click chuột phải hoặc dùng menu `Chỉnh sửa`:
   - **Xoay trang:** Xoay 90°, 180°, 270°.
-  - **Xóa trang:** Xóa các trang bị lỗi.
-  - **Trích xuất (Extract):** Lưu các trang đã chọn thành 1 file PDF mới.
-  - **Chèn trang trống:** Chèn 1 trang trắng vào trước hoặc sau trang đang chọn (kích thước trang trắng sẽ tự động khớp với trang hiện tại).
-- *Lưu ý:* Các thao tác như Xóa/Xoay/Chèn sẽ được lưu tạm trong RAM. Bạn cần vào `Tệp` -> `Lưu file` (hoặc Ctrl+S) để ghi đè thay đổi lên ổ cứng.
+  - **Xóa trang:** Bỏ đi các trang thừa hoặc bị lỗi.
+  - **Trích xuất (Extract):** Tách riêng các trang đã chọn thành 1 file PDF mới.
+  - **Chèn trang trống:** Chèn 1 trang trắng vào vị trí trước hoặc sau trang đang xem. Trang trắng sẽ có kích thước khớp 100% với trang hiện tại.
+- *Lưu ý:* Các thao tác này được lưu tạm trên RAM. Bạn phải `Lưu file` để áp dụng vào ổ cứng.
 
-### 4. Tính năng Tách / Cắt Nâng cao (Split & Crop)
-Ứng dụng cung cấp các công cụ cắt/tách mạnh mẽ trong menu `Công cụ (Tools)`:
+### 4. Công cụ Tách & Cắt PDF (Split & Crop)
+- **Tách theo khoảng cách (Auto-Split):** Tự động tìm dải trắng nằm ngang giữa các đoạn văn để chia nhỏ file mà không làm đứt chữ.
+- **Tách theo Tọa độ Y (Click Split):** Màn hình hiển thị con trỏ ngang, click vào đâu hệ thống sẽ cắt dọc file tại đó. Rất hợp cắt lề dưới hóa đơn/vé.
+- **Tách bằng Nhận dạng chữ (OCR Smart Split):** Ứng dụng tự động đọc chữ (kể cả ảnh scan) và chia trang mỗi khi gặp "Từ khóa bắt đầu" bạn chỉ định (VD: "Chương mới").
+- **Cắt giữa 2 đoạn văn (OCR Crop):** Nhập "Từ khóa bắt đầu" và "Kết thúc", AI sẽ tìm và chỉ cắt lấy khúc giữa hai chữ đó.
 
-- **Tách mỗi N trang:** Tự động chia nhỏ file PDF, cứ N trang sẽ tạo thành 1 file mới. Rất hữu ích khi xử lý lô tài liệu gom chung.
-- **Tách theo dải trang:** Nhập dải trang mong muốn (VD: `1-5, 6-10`) để tách thành các file tương ứng.
-- **Tách ngang theo Click chuột (Tọa độ Y):** 
-  - Chọn tính năng này, màn hình sẽ hiển thị con trỏ chéo. Bạn click vào một điểm trên trang, hệ thống sẽ cắt đôi tờ giấy theo đường ngang tại điểm click đó.
-- **Cắt giữa 2 đoạn văn bản (OCR Crop Between Texts):** 
-  - Tính năng độc quyền cho hóa đơn: Nhập "Từ khóa bắt đầu" và "Từ khóa kết thúc".
-  - Ứng dụng sẽ tự động dùng AI (OCR) đọc chữ trên từng trang, xác định chính xác vị trí của 2 từ khóa và cắt lấy phần nội dung nằm giữa chúng.
-  - *Mẹo:* Trước khi chạy các công cụ Tách hàng loạt, ứng dụng sẽ tự động sao lưu các thay đổi chưa lưu (như xóa/xoay trang) vào file tạm để đảm bảo kết quả cắt ra trùng khớp 100% với những gì bạn thấy trên màn hình! Trước khi cắt, hệ thống luôn hiện hộp thoại hỏi bạn muốn lưu kết quả ở đâu.
+### 5. Thêm Nội dung & Nhận dạng chữ (OCR)
+- **Thêm Chữ / Ảnh:** Menu `Công cụ`. Cho phép chèn thêm nội dung bằng tọa độ (X, Y) chính xác.
+- **Nhận dạng chữ (OCR):** Nếu file PDF là ảnh chụp, dùng OCR để quét lại. Nó sẽ tạo ra 1 file mới có lớp text chìm, giúp bạn có thể bôi đen, copy và tìm kiếm chữ cái như file Word.
+- **Tăng tốc OCR bằng GPU:** OCR mặc định chạy trên CPU. Nếu máy có card màn hình NVIDIA, hãy vào `Trợ giúp -> OCR Info & GPU` để xem cách cài thêm EasyOCR giúp tăng tốc 10x.
+- **Đánh số trang:** Tự động chèn số (VD: Trang 1/10) vào góc dưới.
 
-### 5. Cắt nhiều vùng thủ công (Multi Crop)
-- Mở menu `Công cụ` -> `Multi Crop`. Ứng dụng sẽ tự động đưa bạn về lại màn hình trang đơn (Single View).
-- **Cách cắt:** Nhấp đúp chuột trên màn hình:
-  - Lần Click 1: Tạo vạch ngang trên cùng.
-  - Lần Click 2: Tạo vạch ngang dưới cùng để xác định vùng cần giữ lại.
-- Sau khi đóng khung xong, chọn các trang cần áp dụng ở cột bên trái, rồi nhấn nút **✅ Apply Crop** màu tím ở góc dưới cùng bên phải.
-- Mọi xử lý diễn ra trực tiếp trên RAM, không sinh file rác, tốc độ cực nhanh.
-
-### 6. Bảo mật và Tiện ích khác
-- **Đánh số trang:** Menu `Công cụ` -> `Đánh số trang`. Tự động chèn số trang vào góc dưới tài liệu.
-- **Watermark:** Đóng dấu bản quyền bằng chữ hoặc hình ảnh.
-- **Bảo mật:** Menu `Bảo mật (Security)` cho phép bạn Nén file (Compress) cho nhẹ đi, Đặt mật khẩu (Encrypt) hoặc Gỡ mật khẩu (Decrypt) hàng loạt.
+### 6. Bảo mật và Tối ưu (Security)
+- **Mã hóa (Encrypt):** Đặt mật khẩu AES-256 bảo vệ tuyệt đối.
+- **Gỡ mật khẩu (Decrypt):** Mở khóa PDF.
+- **Nén (Compress):** Giảm dung lượng file scan lớn để gửi mail.
+- **Giải quyết lỗi:** Nếu có lỗi thư viện, hãy đóng app và chạy lại `setup.bat`.
 
 ---
 
@@ -88,7 +82,7 @@ Một ứng dụng chỉnh sửa PDF ngoại tuyến (Offline) mạnh mẽ và b
 
 - **Miễn phí sử dụng:** Ứng dụng này được cung cấp hoàn toàn miễn phí (Free to Use) cho các mục đích cá nhân và thương mại của người sử dụng.
 - **Quyền chỉnh sửa:** Bạn có toàn quyền sao chép, chỉnh sửa (Modify) mã nguồn ứng dụng để phục vụ cho các tính năng và luồng công việc nội bộ của riêng bạn.
-- **⛔ NGHIÊM CẤM PHÂN PHỐI (NOT FOR DISTRIBUTION):** Mặc dù bạn được phép sử dụng và chỉnh sửa, nhưng **bạn KHÔNG được phép phân phối (Distribute), chia sẻ lại, hoặc thương mại hóa (bán, cho thuê)** mã nguồn gốc hay bất kỳ phiên bản nào đã qua chỉnh sửa từ phần mềm này dưới mọi hình thức (kể cả việc upload công khai trên các diễn đàn, các kho lưu trữ mở không thuộc quyền quản lý của tác giả, hoặc bán lại như một sản phẩm phần mềm độc lập).
+- **⛔ NGHIÊM CẤM PHÂN PHỐI (NOT FOR DISTRIBUTION):** Mặc dù bạn được phép sử dụng và chỉnh sửa, nhưng **bạn KHÔNG được phép phân phối (Distribute), chia sẻ lại, hoặc thương mại hóa (bán, cho thuê)** mã nguồn gốc hay bất kỳ phiên bản nào đã qua chỉnh sửa từ phần mềm này dưới mọi hình thức.
 
 ---
-*Cảm ơn bạn đã tin dùng PDF Editor Pro. Chúc bạn có những trải nghiệm làm việc hiệu quả và tối ưu hóa thời gian tốt nhất!*
+*Cảm ơn bạn đã tin dùng PDF Editor Pro. Mọi dữ liệu của bạn đều được bảo mật tuyệt đối 100% OFFLINE!*
