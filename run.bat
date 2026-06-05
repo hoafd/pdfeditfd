@@ -5,12 +5,12 @@ setlocal
 set "PROJECT_DIR=%~dp0"
 cd /d "%PROJECT_DIR%"
 
-REM Check if Python is installed
-python --version >nul 2>&1
+REM Check if venv\Scripts\python.exe is installed
+venv\Scripts\python.exe --version >nul 2>&1
 if errorlevel 1 (
     echo ============================================================
-    echo   Python is not installed or not in PATH!
-    echo   Please run 'setup.bat' first to install Python automatically.
+    echo   venv\Scripts\python.exe is not installed or not in PATH!
+    echo   Please run 'setup.bat' first to install venv\Scripts\python.exe automatically.
     echo ============================================================
     pause
     exit /b 1
@@ -27,10 +27,10 @@ if not exist "venv\Scripts\activate.bat" (
 )
 
 REM Activate virtual environment
-call venv\Scripts\activate.bat
+
 
 REM Check critical packages
-python -c "import fitz, PIL, cv2" 2>nul
+venv\Scripts\python.exe -c "import fitz, PIL, cv2" 2>nul
 if errorlevel 1 (
     echo ============================================================
     echo   ERROR: Missing required libraries!
@@ -54,6 +54,7 @@ REM Add bundled tools to PATH
 set "PATH=%TESSERACT_PATH%;%POPPLER_PATH%;%PATH%"
 
 REM Launch the application
-python main.py %*
+venv\Scripts\python.exe main.py %*
 
 endlocal
+
