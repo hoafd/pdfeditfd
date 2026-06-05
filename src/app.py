@@ -456,6 +456,9 @@ class PDFEditorApp:
                               command=self.show_about)
         help_menu.add_command(label=t("help_shortcuts"),
                               command=self.show_shortcuts)
+        help_menu.add_separator()
+        help_menu.add_command(label="🔍 OCR Info & GPU",
+                              command=self.show_ocr_info)
         menubar.add_cascade(label=t("menu_help"), menu=help_menu)
 
         # Language menu
@@ -2858,6 +2861,140 @@ class PDFEditorApp:
         )
 
     # ─── Help ────────────────────────────────────────────────────────────
+
+    def show_ocr_info(self):
+        """Show OCR engine info and GPU upgrade guide."""
+        from src.ocr_engine import get_ocr_engine
+        engine = get_ocr_engine()
+        info = engine.get_ocr_info()
+
+        source_label = {
+            "system": "✅ Hệ thống (ưu tiên)",
+            "bundled": "📦 Nội bộ (bundled)",
+            "none": "❌ Không tìm thấy"
+        }.get(info["source"], info["source"])
+
+        # Check GPU availability
+        gpu_status = "❌ Không (Tesseract chỉ chạy CPU)"
+        try:
+            import torch
+            if torch.cuda.is_available():
+                gpu_name = torch.cuda.get_device_name(0)
+                gpu_status = f"✅ {gpu_name}"
+            else:
+                gpu_status = "⚠️ Có PyTorch nhưng không tìm thấy CUDA GPU"
+        except ImportError:
+            gpu_status = "❌ Chưa cài PyTorch (cần cho EasyOCR GPU)"
+
+        dialog = tk.Toplevel(self.root)
+        dialog.title("🔍 OCR Info & GPU Guide")
+        dialog.geometry("720x680")
+        dialog.configure(bg=COLORS["bg_dark"])
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        # Scrollable text
+        text = tk.Text(dialog, wrap=tk.WORD, font=("Consolas", 11),
+                       bg=COLORS["bg_card"], fg=COLORS["text_primary"],
+                       padx=15, pady=15, relief=tk.FLAT,
+                       insertbackground=COLORS["text_primary"])
+        scrollbar = tk.Scrollbar(dialog, command=text.yview)
+        text.configure(yscrollcommand=scrollbar.set)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+
+        content = f"""═══════════════════════════════════════════
+   THÔNG TIN OCR HIỆN TẠI
+═══════════════════════════════════════════
+
+  Nguồn Tesseract:  {source_label}
+  Đường dẫn:        {info['path']}
+  Ngôn ngữ mặc định: {info['lang']}
+  Thư mục tessdata: {info['tessdata']}
+  GPU:              {gpu_status}
+
+═══════════════════════════════════════════
+   NÂNG CẤP OCR VỚI GPU (TÙY CHỌN)
+═══════════════════════════════════════════
+
+Tesseract OCR (đang dùng) chỉ chạy trên CPU.
+Nếu bạn có card GPU NVIDIA và muốn OCR nhanh
+hơn 5-10 lần, bạn có thể cài thêm EasyOCR
+hoặc PaddleOCR bên ngoài.
+
+───────────────────────────────────────────
+  CÁCH 1: EasyOCR (Dễ nhất, khuyên dùng)
+───────────────────────────────────────────
+
+Bước 1: Mở CMD hoặc PowerShell với quyền Admin
+
+Bước 2: Cài PyTorch (hỗ trợ GPU CUDA):
+  pip install torch torchvision --index-url \\
+    https://download.pytorch.org/whl/cu121
+
+Bước 3: Cài EasyOCR:
+  pip install easyocr
+
+Bước 4: Kiểm tra:
+  python -c "import easyocr; \\
+    r = easyocr.Reader(['vi','en'], gpu=True); \\
+    print('EasyOCR GPU OK!')"
+
+  * Lần chạy đầu sẽ tự tải mô hình (~100MB)
+  * Hỗ trợ 80+ ngôn ngữ, tiếng Việt rất tốt
+  * Dung lượng: ~2GB (PyTorch + models)
+
+───────────────────────────────────────────
+  CÁCH 2: PaddleOCR (Nhanh nhất)
+───────────────────────────────────────────
+
+Bước 1: Cài PaddlePaddle GPU:
+  pip install paddlepaddle-gpu
+
+Bước 2: Cài PaddleOCR:
+  pip install paddleocr
+
+Bước 3: Kiểm tra:
+  python -c "from paddleocr import PaddleOCR; \\
+    ocr = PaddleOCR(use_gpu=True, lang='vi'); \\
+    print('PaddleOCR GPU OK!')"
+
+  * Nhanh nhất trong 3 engine
+  * Hỗ trợ tiếng Việt tốt
+  * Dung lượng: ~1.5GB
+
+───────────────────────────────────────────
+  SO SÁNH CÁC ENGINE OCR
+───────────────────────────────────────────
+
+  Engine      | GPU | Tốc độ  | Chính xác
+  ------------|-----|---------|----------
+  Tesseract   | ❌  | Trung bình | Tốt
+  EasyOCR     | ✅  | Nhanh    | Rất tốt
+  PaddleOCR   | ✅  | Rất nhanh| Rất tốt
+
+───────────────────────────────────────────
+  LƯU Ý QUAN TRỌNG
+───────────────────────────────────────────
+
+• Cần card NVIDIA có CUDA (GTX 1050 trở lên)
+• Kiểm tra CUDA: nvidia-smi (trong CMD)
+• EasyOCR/PaddleOCR là TÙY CHỌN, không bắt
+  buộc. Tesseract hiện tại vẫn hoạt động tốt
+  cho hầu hết tài liệu.
+• Sau khi cài, khởi động lại ứng dụng để
+  hệ thống tự nhận diện engine mới.
+"""
+        text.insert("1.0", content)
+        text.configure(state=tk.DISABLED)
+
+        # Close button
+        btn = tk.Button(dialog, text="Đóng", font=("Segoe UI", 12, "bold"),
+                        bg=COLORS["accent"], fg="white",
+                        activebackground=COLORS["accent_light"],
+                        relief=tk.FLAT, padx=30, pady=8,
+                        command=dialog.destroy)
+        btn.pack(pady=10)
 
     def show_about(self):
         messagebox.showinfo(
