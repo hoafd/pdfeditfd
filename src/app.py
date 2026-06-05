@@ -3133,34 +3133,20 @@ class PDFEditorApp:
                        selectcolor=COLORS["bg_panel"], font=("Segoe UI", 10))
         rb_easy.pack(side=tk.LEFT)
         
-        def install_easyocr():
-            msg = "VUI LONG DONG UNG DUNG PDF EDITOR (Cua so chinh) TRUOC KHI AN ENTER DE TIEP TUC CAI DAT!!!"
-            cmd = f'start cmd /k "echo {msg} && pause && "{sys.executable}" -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121 && "{sys.executable}" -m pip install easyocr && echo. && echo HOAN THANH! Ban co the mo lai ung dung. && pause"'
-            subprocess.Popen(cmd, shell=True)
-            
         if not info.get("has_easyocr"):
-            rb_easy.configure(state=tk.DISABLED, text="EasyOCR (GPU) - CHƯA CÀI ĐẶT")
-            tk.Button(easy_frame, text="Tự động cài đặt (Cần Internet)", command=install_easyocr, 
-                      bg=COLORS["accent"], fg="white", font=("Segoe UI", 9), relief=tk.FLAT, padx=10).pack(side=tk.LEFT, padx=10)
+            rb_easy.configure(state=tk.DISABLED, text="EasyOCR (GPU) - CHƯA CÀI ĐẶT (Mở file Launcher.exe để cài)")
         
         # PaddleOCR
         paddle_frame = tk.Frame(top_frame, bg=COLORS["bg_dark"])
         paddle_frame.pack(fill=tk.X, anchor=tk.W)
-        rb_paddle = tk.Radiobutton(paddle_frame, text="PaddleOCR (Dùng GPU, Yêu cầu tải thêm qua PIP)", 
+        rb_paddle = tk.Radiobutton(paddle_frame, text="PaddleOCR (Dùng GPU, Yêu cầu tải thêm)", 
                        variable=engine_var, value="paddleocr", command=on_engine_change,
                        bg=COLORS["bg_dark"], fg=COLORS["text_primary"], 
                        selectcolor=COLORS["bg_panel"], font=("Segoe UI", 10))
         rb_paddle.pack(side=tk.LEFT)
-        
-        def install_paddleocr():
-            msg = "VUI LONG DONG UNG DUNG PDF EDITOR (Cua so chinh) TRUOC KHI AN ENTER DE TIEP TUC CAI DAT!!!"
-            cmd = f'start cmd /k "echo {msg} && pause && "{sys.executable}" -m pip install paddlepaddle-gpu && "{sys.executable}" -m pip install paddleocr==2.8.1 && echo. && echo HOAN THANH! Ban co the mo lai ung dung. && pause"'
-            subprocess.Popen(cmd, shell=True)
             
         if not info.get("has_paddleocr"):
-            rb_paddle.configure(state=tk.DISABLED, text="PaddleOCR (GPU) - CHƯA CÀI ĐẶT")
-            tk.Button(paddle_frame, text="Tự động cài đặt (Cần Internet)", command=install_paddleocr, 
-                      bg=COLORS["accent"], fg="white", font=("Segoe UI", 9), relief=tk.FLAT, padx=10).pack(side=tk.LEFT, padx=10)
+            rb_paddle.configure(state=tk.DISABLED, text="PaddleOCR (GPU) - CHƯA CÀI ĐẶT (Mở file Launcher.exe để cài)")
 
         # Scrollable text
         text = tk.Text(dialog, wrap=tk.WORD, font=("Consolas", 11),
