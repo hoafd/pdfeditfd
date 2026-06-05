@@ -23,7 +23,7 @@ except ImportError:
 
 from src.utils import (
     get_tesseract_path, get_tessdata_dir, get_poppler_path,
-    get_temp_dir, logger
+    get_temp_dir, get_tools_dir, logger
 )
 
 
