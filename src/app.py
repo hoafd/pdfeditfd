@@ -3189,7 +3189,8 @@ class PDFEditorApp:
 
     def _get_recent_file_path(self):
         """Get path to recent files JSON."""
-        return Path(__file__).parent.parent / "recent_files.json"
+        from src.utils import get_data_dir
+        return get_data_dir() / "recent_files.json"
 
     def _load_recent_files(self):
         """Load recent files list from disk."""

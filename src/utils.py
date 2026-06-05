@@ -14,13 +14,38 @@ from datetime import datetime
 
 # ─── Project Paths ───────────────────────────────────────────────────────────
 
+def _is_frozen():
+    """Check if running as a PyInstaller frozen EXE."""
+    return getattr(sys, 'frozen', False)
+
+
 def get_project_root():
-    """Get the project root directory."""
+    """Get the project root directory (where source/tools live)."""
+    if _is_frozen():
+        # PyInstaller: the EXE directory (not _internal)
+        return Path(sys.executable).parent.resolve()
+    return Path(__file__).parent.parent.resolve()
+
+
+def get_data_dir():
+    """
+    Get a writable data directory for logs, output, temp, settings.
+    - Frozen EXE: %APPDATA%/PDFEditorPro  (always writable)
+    - Dev mode:   project root             (writable in dev)
+    """
+    if _is_frozen():
+        appdata = os.environ.get("APPDATA", str(Path.home()))
+        d = Path(appdata) / "PDFEditorPro"
+        d.mkdir(parents=True, exist_ok=True)
+        return d
     return Path(__file__).parent.parent.resolve()
 
 
 def get_tools_dir():
     """Get the tools directory path."""
+    if _is_frozen():
+        # PyInstaller bundles tools inside _internal/tools
+        return Path(sys._MEIPASS) / "tools"
     return get_project_root() / "tools"
 
 
@@ -46,16 +71,26 @@ def get_poppler_path():
 
 
 def get_output_dir():
-    """Get the output directory path, creating it if needed."""
-    d = get_project_root() / "output"
-    d.mkdir(exist_ok=True)
-    return d
+    """Get the default output directory — user's Documents folder on Windows."""
+    try:
+        import ctypes.wintypes
+        buf = ctypes.create_unicode_buffer(ctypes.wintypes.MAX_PATH)
+        ctypes.windll.shell32.SHGetFolderPathW(None, 5, None, 0, buf)  # 5 = CSIDL_PERSONAL (Documents)
+        docs = Path(buf.value)
+        if docs.exists():
+            return docs
+    except Exception:
+        pass
+    # Fallback
+    docs = Path.home() / "Documents"
+    docs.mkdir(parents=True, exist_ok=True)
+    return docs
 
 
 def get_temp_dir():
     """Get the temp directory path, creating it if needed."""
-    d = get_project_root() / "temp"
-    d.mkdir(exist_ok=True)
+    d = get_data_dir() / "temp"
+    d.mkdir(parents=True, exist_ok=True)
     return d
 
 import io
@@ -64,8 +99,8 @@ import io
 
 def setup_logging(level=logging.INFO):
     """Set up logging for the application."""
-    log_dir = get_project_root() / "logs"
-    log_dir.mkdir(exist_ok=True)
+    log_dir = get_data_dir() / "logs"
+    log_dir.mkdir(parents=True, exist_ok=True)
     
     log_file = log_dir / f"pdfeditor_{datetime.now().strftime('%Y%m%d')}.log"
     
