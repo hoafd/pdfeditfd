@@ -30,20 +30,35 @@ from src.utils import (
 class OCREngine:
     """
     OCR Engine wrapping Tesseract OCR with OpenCV preprocessing.
-    All paths are configured to use portable tools from the project directory.
+    Auto-detects system Tesseract (with potential GPU support) before
+    falling back to bundled portable version.
     """
 
     def __init__(self):
+        self._tesseract_source = "none"  # "system" or "bundled" or "none"
         self._configure_paths()
         self.default_dpi = 300
         self.default_lang = "eng+vie"
+        self._check_language_packs()
 
     def _configure_paths(self):
-        """Configure Tesseract and Poppler paths for portable use."""
+        """
+        Configure Tesseract and Poppler paths.
+        Priority: System install (may have GPU) > Bundled portable.
+        """
         tesseract_path = get_tesseract_path()
+        
         if tesseract_path.exists() and pytesseract:
             pytesseract.pytesseract.tesseract_cmd = str(tesseract_path)
-            logger.info(f"Tesseract configured: {tesseract_path}")
+            
+            # Determine source
+            bundled_dir = str(get_tools_dir() / "Tesseract-OCR")
+            if bundled_dir.lower() in str(tesseract_path).lower():
+                self._tesseract_source = "bundled"
+                logger.info(f"Tesseract (nội bộ): {tesseract_path}")
+            else:
+                self._tesseract_source = "system"
+                logger.info(f"Tesseract (hệ thống - ưu tiên): {tesseract_path}")
         else:
             logger.warning(
                 f"Tesseract not found at {tesseract_path}. "
@@ -56,6 +71,50 @@ class OCREngine:
 
         self.poppler_path = get_poppler_path()
         logger.info(f"Poppler path: {self.poppler_path}")
+
+    def _check_language_packs(self):
+        """Check and log available OCR language packs."""
+        tessdata = get_tessdata_dir()
+        if not tessdata.exists():
+            logger.warning("tessdata directory not found — OCR languages unavailable")
+            return
+
+        required_langs = {"eng": "English", "vie": "Vietnamese"}
+        available = []
+        missing = []
+
+        for lang_code, lang_name in required_langs.items():
+            traineddata = tessdata / f"{lang_code}.traineddata"
+            if traineddata.exists():
+                available.append(f"{lang_name} ({lang_code})")
+            else:
+                missing.append(f"{lang_name} ({lang_code})")
+
+        if available:
+            logger.info(f"OCR ngôn ngữ sẵn sàng: {', '.join(available)}")
+        if missing:
+            logger.warning(
+                f"OCR ngôn ngữ THIẾU: {', '.join(missing)} — "
+                f"Hãy tải file .traineddata vào: {tessdata}"
+            )
+            # Adjust default_lang to only use available languages
+            available_codes = [
+                code for code in required_langs
+                if (tessdata / f"{code}.traineddata").exists()
+            ]
+            if available_codes:
+                self.default_lang = "+".join(available_codes)
+            else:
+                self.default_lang = "eng"  # Fallback
+
+    def get_ocr_info(self):
+        """Get info about current OCR configuration for display."""
+        return {
+            "source": self._tesseract_source,
+            "path": str(get_tesseract_path()),
+            "lang": self.default_lang,
+            "tessdata": str(get_tessdata_dir()),
+        }
 
     def is_available(self):
         """Check if OCR engine is available."""

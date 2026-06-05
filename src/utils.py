@@ -50,12 +50,37 @@ def get_tools_dir():
 
 
 def get_tesseract_path():
-    """Get the Tesseract executable path."""
+    """
+    Get the best Tesseract executable path.
+    Priority: System install (may have GPU) > Bundled portable version.
+    """
+    # 1. Check system-installed Tesseract (common paths)
+    system_paths = [
+        Path(r"C:\Program Files\Tesseract-OCR\tesseract.exe"),
+        Path(r"C:\Program Files (x86)\Tesseract-OCR\tesseract.exe"),
+    ]
+    # Also check PATH
+    import shutil
+    path_exe = shutil.which("tesseract")
+    if path_exe:
+        system_paths.insert(0, Path(path_exe))
+
+    for p in system_paths:
+        if p.exists():
+            return p
+
+    # 2. Fallback to bundled portable version
     return get_tools_dir() / "Tesseract-OCR" / "tesseract.exe"
 
 
 def get_tessdata_dir():
-    """Get the tessdata directory path."""
+    """Get the tessdata directory for the active Tesseract installation."""
+    tess_exe = get_tesseract_path()
+    # tessdata is typically next to the exe
+    tessdata = tess_exe.parent / "tessdata"
+    if tessdata.exists():
+        return tessdata
+    # Fallback to bundled
     return get_tools_dir() / "Tesseract-OCR" / "tessdata"
 
 
