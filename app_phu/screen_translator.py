@@ -71,8 +71,8 @@ import winreg
 def set_run_on_startup(enable=True):
     key_path = r'Software\Microsoft\Windows\CurrentVersion\Run'
     app_name = 'PDFEdit_ScreenTranslator'
-    exe_path = os.path.abspath(sys.argv[0])
-    if not exe_path.endswith('.exe'):
+    exe_path = sys.executable
+    if not exe_path.lower().endswith('.exe'):
         return
     try:
         key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, key_path, 0, winreg.KEY_ALL_ACCESS)
@@ -346,6 +346,8 @@ class ScreenTranslatorApp(tk.Tk):
         
         self.apply_config(self.config)
         
+        # Tự động tải AI khi bật app
+        self.after(100, lambda: self.load_ocr(lambda: None))
 
     def open_settings(self):
         SettingsWindow(self)
