@@ -5,10 +5,39 @@ and image preprocessing for improved OCR accuracy.
 """
 
 import os
+import io
+import time
+import re
+import math
+import logging
+from typing import List, Dict, Tuple, Optional
+from pathlib import Path
+import ctypes
+
+logger = logging.getLogger(__name__)
+
+def get_short_path(long_name):
+    buffer_size = 256
+    buffer = ctypes.create_unicode_buffer(buffer_size)
+    get_short_path_name_w = ctypes.windll.kernel32.GetShortPathNameW
+    if get_short_path_name_w(long_name, buffer, buffer_size):
+        return buffer.value
+    return long_name
+
+# Override USERPROFILE so PaddleOCR saves/loads to pdfeditfd/tools/paddleocr_models
+root_dir = Path(__file__).resolve().parent.parent
+paddleocr_models_dir = root_dir / 'tools' / 'paddleocr_models'
+paddleocr_models_dir.parent.mkdir(parents=True, exist_ok=True)
+paddleocr_models_dir.mkdir(exist_ok=True)
+safe_parent_dir = get_short_path(str(paddleocr_models_dir.parent))
+os.environ['USERPROFILE'] = safe_parent_dir
+
 import cv2
 import numpy as np
-from PIL import Image
-from pathlib import Path
+try:
+    from PIL import Image
+except ImportError:
+    pytesseract = None
 
 try:
     import pytesseract
@@ -74,7 +103,31 @@ class OCREngine:
             if self.paddleocr_reader is None:
                 logger.info("Initializing PaddleOCR reader (this may take a moment)...")
                 p_lang = self._get_paddleocr_lang(self.default_lang)
-                self.paddleocr_reader = PaddleOCR(use_angle_cls=True, lang=p_lang)
+                self.paddleocr_reader = PaddleOCR(use_angle_cls=True, lang=p_lang, use_gpu=True)
+                try:
+                    import numpy as np
+                    self.paddleocr_reader.ocr(np.zeros((10, 10, 3), dtype=np.uint8), cls=False)
+                except Exception as e:
+                    import subprocess
+                    self.paddleocr_reader = PaddleOCR(use_angle_cls=True, lang=p_lang, use_gpu=False)
+                    # Kiểm tra xem máy có NVIDIA GPU không
+                    try:
+                        subprocess.run(["nvidia-smi"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, creationflags=0x08000000, check=True)
+                        has_nvidia = True
+                    except Exception:
+                        has_nvidia = False
+                    
+                    if has_nvidia and "cudnn" in str(e).lower():
+                        try:
+                            import tkinter.messagebox as messagebox
+                            messagebox.showinfo(
+                                "Gợi ý tăng tốc AI", 
+                                "Phát hiện Card Đồ Họa NVIDIA nhưng thiếu driver cuDNN để chạy AI tốc độ cao.\n\n"
+                                "Ứng dụng đã tự động chuyển sang dùng CPU (vẫn rất nhanh). Để AI chạy siêu tốc, "
+                                "vui lòng tải cuDNN tại:\nhttps://developer.nvidia.com/cudnn-downloads"
+                            )
+                        except Exception:
+                            pass
             self.active_engine = "paddleocr"
             logger.info("OCR Engine switched to PaddleOCR (GPU/CPU).")
         else:

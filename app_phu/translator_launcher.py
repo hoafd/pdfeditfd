@@ -69,24 +69,44 @@ def find_pdfeditfd_root():
 
 
 def main():
-    root_path = find_pdfeditfd_root()
-    if not root_path:
-        sys.exit(1)
+    try:
+        root_path = find_pdfeditfd_root()
+        if not root_path:
+            sys.exit(1)
 
-    # Path to pythonw and script based on root path
-    pythonw = os.path.join(root_path, "venv", "Scripts", "python.exe")
-    script = os.path.join(root_path, "app_phu", "screen_translator.py")
+        # Path to pythonw and script based on root path
+        pythonw = os.path.join(root_path, "venv", "Scripts", "pythonw.exe")
+        script = os.path.join(root_path, "app_phu", "screen_translator.py")
 
-    if not os.path.exists(pythonw) or not os.path.exists(script):
-        import tkinter.messagebox
-        import tkinter as tk
-        root = tk.Tk()
-        root.withdraw()
-        tkinter.messagebox.showerror("Lỗi", f"Thấy thư mục gốc {root_path} nhưng không tìm thấy file script hoặc venv!")
-        sys.exit(1)
+        if not os.path.exists(pythonw) or not os.path.exists(script):
+            import tkinter.messagebox
+            import tkinter as tk
+            root = tk.Tk()
+            root.withdraw()
+            tkinter.messagebox.showerror("Lỗi", f"Thấy thư mục gốc {root_path} nhưng không tìm thấy file script hoặc venv!")
+            sys.exit(1)
 
-    # Launch the script using the main venv
-    subprocess.Popen([pythonw, script], cwd=os.path.join(root_path, "app_phu"), creationflags=0x08000000)
+        # Launch the script using the main venv
+        env = os.environ.copy()
+        env.pop('TCL_LIBRARY', None)
+        env.pop('TK_LIBRARY', None)
+        
+        log_file = open(os.path.join(os.getenv('USERPROFILE'), "translator_cmd_error.log"), "w", encoding="utf-8")
+        p = subprocess.Popen(
+            [pythonw, script], 
+            cwd=os.path.join(root_path, "app_phu"), 
+            stdin=subprocess.DEVNULL,
+            stdout=log_file, 
+            stderr=subprocess.STDOUT,
+            env=env
+        )
+        # Không cần đợi p.wait() vì pythonw tự ngầm, Launcher có thể tắt luôn.
+
+        log_file.close()
+    except Exception as e:
+        import traceback
+        with open(os.path.join(os.getenv('USERPROFILE'), "launcher_error.log"), "w", encoding="utf-8") as f:
+            f.write(traceback.format_exc())
 
 if __name__ == "__main__":
     main()

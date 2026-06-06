@@ -65,6 +65,10 @@ class PDFEditorLauncher(tk.Tk):
         self.lbl_paddle = self.create_status_row("PaddleOCR (GPU AI):", "Đang kiểm tra...", 4)
         self.btn_paddle = self.create_action_button("Cài đặt PaddleOCR", self.install_paddleocr, 5)
 
+        # PaddleOCR Models Status
+        self.lbl_models = self.create_status_row("Dữ liệu Model AI:", "Đang kiểm tra...", 6)
+        self.btn_models = self.create_action_button("Tải Model AI", self.download_ai_models, 7)
+
         # Launch Button
         launch_frame = tk.Frame(self, bg=COLORS["bg_dark"], pady=20)
         launch_frame.pack(fill=tk.X, side=tk.BOTTOM)
@@ -133,6 +137,15 @@ class PDFEditorLauncher(tk.Tk):
         else:
             self.lbl_paddle.config(text="Chưa cài đặt", fg=COLORS["danger"])
             self.btn_paddle.config(state=tk.NORMAL)
+
+        # Check PaddleOCR Models
+        models_dir = os.path.join(os.getcwd(), "tools", ".paddleocr", "whl")
+        if os.path.exists(models_dir) and len(os.listdir(models_dir)) > 0:
+            self.lbl_models.config(text="Đã tải", fg=COLORS["success"])
+            self.btn_models.config(state=tk.DISABLED, text="Đã tải")
+        else:
+            self.lbl_models.config(text="Chưa tải", fg=COLORS["danger"])
+            self.btn_models.config(state=tk.NORMAL)
             
         self.after(2000, self.check_status) # Auto-refresh every 2 seconds
 
@@ -148,6 +161,14 @@ class PDFEditorLauncher(tk.Tk):
 
     def install_paddleocr(self):
         cmd = f'start cmd /k "{self.python_exe}" -m pip install paddlepaddle-gpu && "{self.python_exe}" -m pip install paddleocr==2.8.1 && echo. && echo CAI DAT THANH CONG! Vui long tat cua so nay. && pause'
+        subprocess.Popen(cmd, shell=True)
+
+    def download_ai_models(self):
+        bat_path = os.path.join(os.getcwd(), "app_phu", "Tai_Du_Lieu_AI.bat")
+        if not os.path.exists(bat_path):
+            messagebox.showerror("Lỗi", "Không tìm thấy file Tai_Du_Lieu_AI.bat trong thư mục app_phu!")
+            return
+        cmd = f'start cmd /c "{bat_path}"'
         subprocess.Popen(cmd, shell=True)
 
     def launch_app(self):
