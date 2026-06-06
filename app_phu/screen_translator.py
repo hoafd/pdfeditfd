@@ -56,7 +56,7 @@ def load_config():
                 return json.load(f)
         except Exception:
             pass
-    return {"hotkey": "ctrl+shift+d", "run_in_background": False, "run_on_startup": False}
+    return {"hotkey": "ctrl+shift+d", "run_in_background": True, "run_on_startup": False}
 
 def save_config(config):
     try:
@@ -291,7 +291,7 @@ class SettingsWindow(tk.Toplevel):
         self.entry_hotkey.pack(pady=5)
         self.entry_hotkey.insert(0, self.config_data.get("hotkey", "ctrl+shift+d"))
         
-        self.var_bg = tk.BooleanVar(value=self.config_data.get("run_in_background", False))
+        self.var_bg = tk.BooleanVar(value=self.config_data.get("run_in_background", True))
         tk.Checkbutton(self, text="Chạy ngầm (Background Service)", variable=self.var_bg, bg=COLORS["bg_dark"], fg=COLORS["text_primary"], selectcolor=COLORS["bg_panel"]).pack(anchor="w", padx=20, pady=5)
         
         self.var_startup = tk.BooleanVar(value=self.config_data.get("run_on_startup", False))
@@ -366,7 +366,7 @@ class ScreenTranslatorApp(tk.Tk):
             except Exception as e:
                 print("Hotkey error:", e)
                 
-        if self.config.get("run_in_background", False):
+        if self.config.get("run_in_background", True):
             self.protocol("WM_DELETE_WINDOW", self.hide_window)
         else:
             self.protocol("WM_DELETE_WINDOW", self.quit_app)
