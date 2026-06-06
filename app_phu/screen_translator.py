@@ -230,7 +230,8 @@ class ScreenTranslatorApp(tk.Tk):
                     # Back to main thread
                     self.after(0, lambda: self.on_ocr_loaded(True, on_done))
                 except Exception as e:
-                    self.after(0, lambda: self.on_ocr_loaded(False, str(e)))
+                    err_msg = str(e)
+                    self.after(0, lambda msg=err_msg: self.on_ocr_loaded(False, msg))
                     
             threading.Thread(target=load_thread, daemon=True).start()
         else:
@@ -269,7 +270,8 @@ class ScreenTranslatorApp(tk.Tk):
                 
                 self.after(0, lambda: self.on_process_done(True, full_text, x2, y1))
             except Exception as e:
-                self.after(0, lambda: self.on_process_done(False, str(e), 0, 0))
+                err_msg = str(e)
+                self.after(0, lambda msg=err_msg: self.on_process_done(False, msg, 0, 0))
                 
         threading.Thread(target=process_thread, daemon=True).start()
 

@@ -10,7 +10,7 @@ def main():
         current_dir = os.path.dirname(os.path.abspath(__file__))
 
     # Path to pythonw and script
-    pythonw = os.path.abspath(os.path.join(current_dir, "..", "venv", "Scripts", "pythonw.exe"))
+    pythonw = os.path.abspath(os.path.join(current_dir, "..", "venv", "Scripts", "python.exe"))
     script = os.path.join(current_dir, "screen_translator.py")
 
     if not os.path.exists(pythonw):
