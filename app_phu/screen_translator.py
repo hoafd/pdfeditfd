@@ -45,7 +45,7 @@ COLORS = {
     "text_primary": "#cdd6f4",
 }
 
-LANGUAGES = ["Tiếng Anh", "Tiếng Trung", "Tiếng Nhật", "Tiếng Hàn", "Tiếng Pháp/Đức (Latin)"]
+LANGUAGES = ["Tiếng Anh", "Tiếng Việt", "Tiếng Trung", "Tiếng Nhật", "Tiếng Hàn", "Tiếng Pháp/Đức (Latin)"]
 
 CONFIG_FILE = os.path.join(root_dir, "app_phu", "config.json")
 
@@ -101,6 +101,7 @@ class AutoOCREngine:
             
             paddle_lang_map = {
                 "Tiếng Anh": "en",
+                "Tiếng Việt": "vi",
                 "Tiếng Trung": "ch",
                 "Tiếng Nhật": "japan",
                 "Tiếng Hàn": "korean",
@@ -122,6 +123,7 @@ class AutoOCREngine:
             import easyocr
             easy_lang_map = {
                 "Tiếng Anh": ["en"],
+                "Tiếng Việt": ["vi", "en"],
                 "Tiếng Trung": ["ch_sim", "en"],
                 "Tiếng Nhật": ["ja", "en"],
                 "Tiếng Hàn": ["ko", "en"],
