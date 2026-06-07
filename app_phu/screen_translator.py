@@ -304,6 +304,8 @@ class ScreenTranslatorApp(tk.Tk):
     def __init__(self):
         super().__init__()
         self.config = load_config()
+        self.task_queue = queue.Queue()
+        self.poll_queue()
         self.tray_icon = None
         
         self.title("App Phụ: Dịch Màn Hình")
@@ -340,6 +342,15 @@ class ScreenTranslatorApp(tk.Tk):
         # Tự động tải AI khi bật app
         self.after(100, lambda: self.load_ocr(lambda: None))
 
+    def poll_queue(self):
+        try:
+            while True:
+                func = self.task_queue.get_nowait()
+                func()
+        except queue.Empty:
+            pass
+        self.after(100, self.poll_queue)
+
     def open_settings(self):
         SettingsWindow(self)
         
@@ -357,7 +368,7 @@ class ScreenTranslatorApp(tk.Tk):
         if self.config.get("hotkey"):
             try:
                 # Gọi sự kiện Tkinter an toàn từ luồng khác bằng event_generate
-                keyboard.add_hotkey(self.config["hotkey"], lambda: self.after(0, self.start_snip_from_hotkey))
+                keyboard.add_hotkey(self.config["hotkey"], lambda: self.task_queue.put(self.start_snip_from_hotkey))
             except Exception as e:
                 print("Hotkey error:", e)
                 
@@ -390,8 +401,8 @@ class ScreenTranslatorApp(tk.Tk):
         # Tạo icon đơn giản
         img = PILImage.new('RGB', (64, 64), color=(122, 162, 247))
         menu = pystray.Menu(
-            pystray.MenuItem('Dịch ngay', lambda: self.after(0, self.start_snip_from_hotkey)),
-            pystray.MenuItem('Hiện cửa sổ', lambda: self.after(0, self.show_window)),
+            pystray.MenuItem('Dịch ngay', lambda: self.task_queue.put(self.start_snip_from_hotkey)),
+            pystray.MenuItem('Hiện cửa sổ', lambda: self.task_queue.put(self.show_window)),
             pystray.MenuItem('Thoát', self.quit_app)
         )
         self.tray_icon = pystray.Icon("ScreenTranslator", img, "PDFEdit Screen Translator", menu)
@@ -454,7 +465,9 @@ class ScreenTranslatorApp(tk.Tk):
         SnippingOverlay(self, self.process_snip, self.cancel_snip)
         
     def cancel_snip(self):
-        if not self.tray_icon:
+        if self.config.get("run_in_background", True):
+            self.hide_window()
+        else:
             self.deiconify()
         
     def process_snip(self, x1, y1, x2, y2):
@@ -489,6 +502,7 @@ class ScreenTranslatorApp(tk.Tk):
             messagebox.showerror("Lỗi OCR", text)
 
 import socket
+import queue
 
 def check_single_instance():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -500,7 +514,7 @@ def check_single_instance():
                 conn, addr = s.accept()
                 data = conn.recv(1024).decode()
                 if data == "SHOW" and 'app' in globals():
-                    app.after(0, app.show_window)
+                    app.task_queue.put(app.show_window)
                 conn.close()
         threading.Thread(target=listen_thread, daemon=True).start()
         return True, s
