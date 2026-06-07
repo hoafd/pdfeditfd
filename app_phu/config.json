@@ -1,5 +1,5 @@
 {
-    "hotkey": "ctrl+shift+0",
+    "hotkey": "ctrl+shift+(+f4",
     "run_in_background": true,
     "run_on_startup": true
 }

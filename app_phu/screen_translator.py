@@ -491,9 +491,12 @@ class ScreenTranslatorApp(tk.Tk):
             self.deiconify()
         
     def process_snip(self, x1, y1, x2, y2):
-        self.deiconify() # Show main window again
-        self.btn_snip.config(text="Đang đọc chữ...", state=tk.DISABLED)
-        self.update()
+        if not self.config.get("run_in_background", True):
+            self.deiconify() # Show main window again
+            self.btn_snip.config(text="Đang đọc chữ...", state=tk.DISABLED)
+            self.update()
+        else:
+            self.hide_window()
         
         def process_thread():
             try:
@@ -512,7 +515,8 @@ class ScreenTranslatorApp(tk.Tk):
         threading.Thread(target=process_thread, daemon=True).start()
 
     def on_process_done(self, success, text, x, y):
-        self.btn_snip.config(text="✂ Khoanh vùng & Dịch", state=tk.NORMAL)
+        if not self.config.get("run_in_background", True):
+            self.btn_snip.config(text="✂ Khoanh vùng & Dịch", state=tk.NORMAL)
         if success:
             if text:
                 ResultWindow(self, text, x, y) # Show window near top-right of snip
