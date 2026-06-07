@@ -108,23 +108,8 @@ class AutoOCREngine:
             }
             lang = paddle_lang_map.get(lang_name, "en")
             
-            # Khởi tạo và test thử GPU, nếu lỗi cuDNN thì tự động lùi về CPU
-            self.engine = PaddleOCR(use_angle_cls=False, lang=lang, use_gpu=True)
-            try:
-                import numpy as np
-                self.engine.ocr(np.zeros((10, 10, 3), dtype=np.uint8), cls=False)
-            except Exception as e:
-                import subprocess
-                self.engine = PaddleOCR(use_angle_cls=False, lang=lang, use_gpu=False)
-                # Kiểm tra xem máy có NVIDIA GPU không
-                try:
-                    subprocess.run(["nvidia-smi"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, creationflags=0x08000000, check=True)
-                    has_nvidia = True
-                except Exception:
-                    has_nvidia = False
-                
-                if has_nvidia and "cudnn" in str(e).lower():
-                    self.cudnn_warning = True
+            # Mặc định dùng CPU cho nhẹ, bỏ qua test GPU lỗi
+            self.engine = PaddleOCR(use_angle_cls=False, lang=lang, use_gpu=False, show_log=False)
 
             self.engine_type = "paddleocr"
             print(f"Loaded PaddleOCR ({lang})")
@@ -345,6 +330,7 @@ class ScreenTranslatorApp(tk.Tk):
         self.btn_snip.pack(expand=True, fill=tk.BOTH, padx=20, pady=(0, 15))
         
         self.apply_config(self.config)
+        self.bind("<<Show>>", lambda e: self.show_window())
         
         # Tự động tải AI khi bật app
         self.after(100, lambda: self.load_ocr(lambda: None))
@@ -359,10 +345,14 @@ class ScreenTranslatorApp(tk.Tk):
         except: pass
         
         self.config = new_config
+        
+        # Đảm bảo bind sự kiện an toàn cho luồng
+        self.bind("<<Hotkey>>", lambda e: self.start_snip_from_hotkey())
+        
         if self.config.get("hotkey"):
             try:
-                # Dùng after_idle để đảm bảo start_snip chạy trên luồng chính
-                keyboard.add_hotkey(self.config["hotkey"], lambda: self.after_idle(self.start_snip_from_hotkey))
+                # Gọi sự kiện Tkinter an toàn từ luồng khác bằng event_generate
+                keyboard.add_hotkey(self.config["hotkey"], lambda: self.event_generate("<<Hotkey>>", when="tail"))
             except Exception as e:
                 print("Hotkey error:", e)
                 
@@ -395,8 +385,8 @@ class ScreenTranslatorApp(tk.Tk):
         # Tạo icon đơn giản
         img = PILImage.new('RGB', (64, 64), color=(122, 162, 247))
         menu = pystray.Menu(
-            pystray.MenuItem('Dịch ngay', lambda: self.after_idle(self.start_snip_from_hotkey)),
-            pystray.MenuItem('Hiện cửa sổ', self.show_window),
+            pystray.MenuItem('Dịch ngay', lambda: self.event_generate("<<Hotkey>>", when="tail")),
+            pystray.MenuItem('Hiện cửa sổ', lambda: self.event_generate("<<Show>>", when="tail")),
             pystray.MenuItem('Thoát', self.quit_app)
         )
         self.tray_icon = pystray.Icon("ScreenTranslator", img, "PDFEdit Screen Translator", menu)
@@ -489,7 +479,37 @@ class ScreenTranslatorApp(tk.Tk):
         else:
             messagebox.showerror("Lỗi OCR", text)
 
+import socket
+
+def check_single_instance():
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        s.bind(('127.0.0.1', 54321))
+        s.listen(1)
+        def listen_thread():
+            while True:
+                conn, addr = s.accept()
+                data = conn.recv(1024).decode()
+                if data == "SHOW" and 'app' in globals():
+                    app.event_generate("<<Show>>", when="tail")
+                conn.close()
+        threading.Thread(target=listen_thread, daemon=True).start()
+        return True, s
+    except OSError:
+        try:
+            client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            client.connect(('127.0.0.1', 54321))
+            client.sendall(b"SHOW")
+            client.close()
+        except:
+            pass
+        return False, None
+
 if __name__ == "__main__":
+    is_main, lock_socket = check_single_instance()
+    if not is_main:
+        sys.exit(0)
+
     try:
         app = ScreenTranslatorApp()
         app.mainloop()
