@@ -93,6 +93,15 @@ class AutoOCREngine:
         self.engine_type = None
         self.engine = None
         
+        # 0. Ưu tiên Tesseract cho Tiếng Việt vì PaddleOCR hay làm mất dấu
+        tess_cmd = r"C:\Program Files\Tesseract-OCR	esseract.exe"
+        if os.path.exists(tess_cmd) and "Việt" in lang_name:
+            self.engine_type = "tesseract"
+            self.tesseract_cmd = tess_cmd
+            self.tess_lang = "vie+eng" if "Anh/Việt" in lang_name else "vie"
+            print(f"Loaded Tesseract ({self.tess_lang})")
+            return
+
         # 1. Try PaddleOCR (Mạnh nhất, đặc biệt cho Tiếng Việt/Trung/Nhật)
         try:
             from paddleocr import PaddleOCR
@@ -142,7 +151,22 @@ class AutoOCREngine:
         raise Exception("Không tìm thấy lõi AI nào (PaddleOCR/EasyOCR)! Hãy mở Launcher để tải AI.")
 
     def do_ocr(self, img_np):
-        if self.engine_type == "paddleocr":
+        if self.engine_type == "tesseract":
+            import tempfile
+            from PIL import Image as PILImg
+            with tempfile.TemporaryDirectory() as tmpdirname:
+                img_path = os.path.join(tmpdirname, "temp.png")
+                out_path = os.path.join(tmpdirname, "out")
+                PILImg.fromarray(img_np).save(img_path)
+                cmd = [self.tesseract_cmd, img_path, out_path, "-l", self.tess_lang]
+                subprocess.run(cmd, creationflags=0x08000000, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                txt_file = out_path + ".txt"
+                if os.path.exists(txt_file):
+                    with open(txt_file, "r", encoding="utf-8") as f:
+                        return f.read().strip()
+                return ""
+                
+        elif self.engine_type == "paddleocr":
             img_bgr = img_np[:, :, ::-1] # RGB to BGR
             result = self.engine.ocr(img_bgr, cls=False)
             text_lines = []
