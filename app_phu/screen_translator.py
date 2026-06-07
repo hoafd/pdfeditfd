@@ -45,7 +45,7 @@ COLORS = {
     "text_primary": "#cdd6f4",
 }
 
-LANGUAGES = ["Tiếng Anh", "Tiếng Việt", "Tiếng Trung", "Tiếng Nhật", "Tiếng Hàn", "Tiếng Pháp/Đức (Latin)"]
+LANGUAGES = ["Tự động (Anh/Việt)", "Tiếng Anh", "Tiếng Việt", "Tiếng Trung", "Tiếng Nhật", "Tiếng Hàn", "Tiếng Pháp/Đức (Latin)"]
 
 CONFIG_FILE = os.path.join(root_dir, "app_phu", "config.json")
 
@@ -100,6 +100,7 @@ class AutoOCREngine:
             logging.getLogger("ppocr").setLevel(logging.WARNING)
             
             paddle_lang_map = {
+                "Tự động (Anh/Việt)": "vi",
                 "Tiếng Anh": "en",
                 "Tiếng Việt": "vi",
                 "Tiếng Trung": "ch",
@@ -122,6 +123,7 @@ class AutoOCREngine:
         try:
             import easyocr
             easy_lang_map = {
+                "Tự động (Anh/Việt)": ["vi", "en"],
                 "Tiếng Anh": ["en"],
                 "Tiếng Việt": ["vi", "en"],
                 "Tiếng Trung": ["ch_sim", "en"],
@@ -229,7 +231,7 @@ class ResultWindow(tk.Toplevel):
         self.txt_orig.insert(tk.END, original_text)
         
         # Translate Button
-        self.btn_trans = tk.Button(self, text="⬇ Dịch sang Tiếng Việt", bg=COLORS["accent"], fg="white", font=("Segoe UI", 10, "bold"), command=self.do_translate, relief=tk.FLAT)
+        self.btn_trans = tk.Button(self, text="⬇ Dịch tự động", bg=COLORS["accent"], fg="white", font=("Segoe UI", 10, "bold"), command=self.do_translate, relief=tk.FLAT)
         self.btn_trans.pack(pady=5)
         
         # Translated Text
@@ -254,12 +256,15 @@ class ResultWindow(tk.Toplevel):
         def trans_thread():
             try:
                 translated = GoogleTranslator(source='auto', target='vi').translate(text)
+                if translated.strip().lower() == text.strip().lower():
+                    # Nếu text gốc đã là tiếng Việt thì dịch sang tiếng Anh
+                    translated = GoogleTranslator(source='auto', target='en').translate(text)
                 self.txt_trans.delete("1.0", tk.END)
                 self.txt_trans.insert(tk.END, translated)
             except Exception as e:
                 messagebox.showerror("Lỗi dịch thuật", str(e))
             finally:
-                self.btn_trans.config(text="⬇ Dịch sang Tiếng Việt", state=tk.NORMAL)
+                self.btn_trans.config(text="⬇ Dịch tự động", state=tk.NORMAL)
                 
         threading.Thread(target=trans_thread, daemon=True).start()
 
