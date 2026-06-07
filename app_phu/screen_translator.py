@@ -277,9 +277,14 @@ class SettingsWindow(tk.Toplevel):
         self.config_data = parent.config.copy()
         
         tk.Label(self, text="Phím tắt gọi dịch:", bg=COLORS["bg_dark"], fg=COLORS["text_primary"]).pack(pady=(10,0))
-        self.entry_hotkey = tk.Entry(self, font=("Segoe UI", 10))
-        self.entry_hotkey.pack(pady=5)
+        hotkey_frame = tk.Frame(self, bg=COLORS["bg_dark"])
+        hotkey_frame.pack(pady=5)
+        self.entry_hotkey = tk.Entry(hotkey_frame, font=("Segoe UI", 10), width=15)
+        self.entry_hotkey.pack(side=tk.LEFT, padx=5)
         self.entry_hotkey.insert(0, self.config_data.get("hotkey", "ctrl+shift+d"))
+        
+        self.btn_record = tk.Button(hotkey_frame, text="Ghi phím", bg=COLORS["bg_panel"], fg=COLORS["text_primary"], relief=tk.FLAT, command=self.start_record_hotkey)
+        self.btn_record.pack(side=tk.LEFT)
         
         self.var_bg = tk.BooleanVar(value=self.config_data.get("run_in_background", True))
         tk.Checkbutton(self, text="Chạy ngầm (Background Service)", variable=self.var_bg, bg=COLORS["bg_dark"], fg=COLORS["text_primary"], selectcolor=COLORS["bg_panel"]).pack(anchor="w", padx=20, pady=5)
@@ -289,6 +294,21 @@ class SettingsWindow(tk.Toplevel):
         
         tk.Button(self, text="Lưu Cài đặt", bg=COLORS["accent"], fg="white", command=self.save_settings).pack(pady=15)
         
+    def start_record_hotkey(self):
+        self.btn_record.config(text="Đang chờ...", fg="red", state=tk.DISABLED)
+        def listen():
+            try:
+                hk = keyboard.read_hotkey(suppress=False)
+                self.after(0, lambda: self.on_hotkey_recorded(hk))
+            except:
+                self.after(0, lambda: self.on_hotkey_recorded(self.entry_hotkey.get()))
+        threading.Thread(target=listen, daemon=True).start()
+        
+    def on_hotkey_recorded(self, hk):
+        self.entry_hotkey.delete(0, tk.END)
+        self.entry_hotkey.insert(0, hk)
+        self.btn_record.config(text="Ghi phím", fg=COLORS["text_primary"], state=tk.NORMAL)
+
     def save_settings(self):
         new_hotkey = self.entry_hotkey.get().strip()
         if new_hotkey:
