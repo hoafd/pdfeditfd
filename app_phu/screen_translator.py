@@ -382,7 +382,7 @@ class ScreenTranslatorApp(tk.Tk):
     def start_snip_from_hotkey(self):
         if not self.winfo_viewable():
             # Nếu đang ẩn, tự tải OCR (nếu chưa tải) rồi chạy snip. Không hiện cửa sổ chính để tránh rối.
-            self.load_ocr(self.do_snip)
+            self.load_ocr(self._do_snip)
         else:
             self.start_snip()
             
