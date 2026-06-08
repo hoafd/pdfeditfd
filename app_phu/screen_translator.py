@@ -94,7 +94,7 @@ class AutoOCREngine:
         self.engine = None
         
         # 0. Ưu tiên Tesseract cho Tiếng Việt vì PaddleOCR hay làm mất dấu
-        tess_cmd = os.path.join(root_dir, "Tesseract-OCR", "tesseract.exe")
+        tess_cmd = os.path.join(root_dir, "tools", "Tesseract-OCR", "tesseract.exe")
         if not os.path.exists(tess_cmd):
             tess_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
         if os.path.exists(tess_cmd) and "Việt" in lang_name:
