@@ -94,8 +94,16 @@ $pyInstaller = Join-Path $ProjectDir "venv\Scripts\pyinstaller.exe"
     --hidden-import "lxml" `
     --hidden-import "pdf2image" `
     --hidden-import "numpy" `
+    --hidden-import "paddle" `
+    --hidden-import "paddleocr" `
     --collect-all "customtkinter" `
     --collect-all "fitz" `
+    --collect-all "paddle" `
+    --collect-all "paddleocr" `
+    --collect-all "Cython" `
+    --collect-all "skimage" `
+    --collect-all "scipy" `
+    --collect-all "shapely" `
     --noconfirm --clean `
     main.py
 
